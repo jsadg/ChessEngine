@@ -1,0 +1,392 @@
+#include <stdio.h>
+
+//Bitboard data type
+#define U64 unsigned long long
+
+//Board squares
+enum{
+    a8, b8, c8, d8, e8, f8, g8, h8,
+    a7, b7, c7, d7, e7, f7, g7, h7,
+    a6, b6, c6, d6, e6, f6, g6, h6,
+    a5, b5, c5, d5, e5, f5, g5, h5,
+    a4, b4, c4, d4, e4, f4, g4, h4,
+    a3, b3, c3, d3, e3, f3, g3, h3,
+    a2, b2, c2, d2, e2, f2, g2, h2,
+    a1, b1, c1, d1, e1, f1, g1, h1  
+};
+
+enum{
+    white, black
+};
+
+const char *square_to_coords[] = {
+    "a8","b8","c8","d8","e8","f8","g8","h8",
+    "a7","b7","c7","d7","e7","f7","g7","h7",
+    "a6","b6","c6","d6","e6","f6","g6","h6",
+    "a5","b5","c5","d5","e5","f5","g5","h5",
+    "a4","b4","c4","d4","e4","f4","g4","h4",
+    "a3","b3","c3","d3","e3","f3","g3","h3",
+    "a2","b2","c2","d2","e2","f2","g2","h2",
+    "a1","b1","c1","d1","e1","f1","g1","h1"
+};
+
+//Debruijn board table for lsb calculation
+static const int index64[64] = {
+     0,  1, 48,  2, 57, 49, 28,  3,
+    61, 58, 50, 42, 38, 29, 17,  4,
+    62, 55, 59, 36, 53, 51, 43, 22,
+    45, 39, 33, 30, 24, 18, 12,  5,
+    63, 47, 56, 27, 60, 41, 37, 16,
+    54, 35, 52, 21, 44, 32, 23, 11,
+    46, 26, 40, 15, 34, 20, 31, 10,
+    25, 14, 19,  9, 13,  8,  7,  6
+};
+
+//Macros
+//Sets a given bit by making the target bit a 1 and oring it
+#define set_bit(bitboard, square) (bitboard |= (1ULL << square))
+
+//Checks a given bit on the board by making the target but a 1 and anding it
+#define get_bit(bitboard, square) (bitboard & (1ULL << square))
+
+//Removes a given bit by making everything a 1 other than the target bit then anding it
+#define rem_bit(bitboard, square) (bitboard &= ~(1ULL << square))
+
+//Counts the bits within the bitboard
+static inline int count_bits(U64 bitboard){
+    int bitcount = 0;
+    bitcount=__builtin_popcountll(bitboard);
+    return bitcount;
+}
+
+//Gets the lsb location of the bitboard
+static inline int get_lsb_index(U64 bitboard) {
+    if (bitboard == 0)
+        return -1;
+
+    U64 isolated = bitboard & -bitboard;
+    U64 debruijn = (isolated * 0x03f79d71b4cb0a89ULL) >> 58;
+    return index64[debruijn];
+}
+
+//Print the given bitboard
+void print_bitboard(U64 bitboard){
+    for(int rank = 0; rank < 8; rank++){
+        for(int file = 0; file < 8; file++){
+            int square = rank*8 + file;
+            if(file == 0){
+                printf(" %d ", 8 - rank);
+            }
+            printf(" %d ", get_bit(bitboard, square) ? 1 : 0);
+        }
+        printf("\n");
+    }
+    printf("    a  b  c  d  e  f  g  h\n\n");
+
+    //Decimal representation of bitboard
+    printf("Bitboard: %llud\n\n", bitboard);
+}
+
+//Bitboard of 1 except 0 for the a file (pawns)
+const U64 not_a_file = 18374403900871474942ULL;
+
+//Bitboard of 1 except 0 for the h file (pawns)
+const U64 not_h_file = 9187201950435737471ULL;
+
+//Bitboard of 1 except 0 for the h and g files (knights)
+const U64 not_hg_file = 4557430888798830399ULL;
+
+//Bitboard of 1 except 0 for the a and b files (knights)
+const U64 not_ab_file = 18229723555195321596ULL;
+
+//Pawns attack table [side][square]
+U64 pawn_attacks[2][64];
+
+//Generate pawn attacks
+U64 mask_pawn_attacks(int side, int square){
+    //Attacks
+    U64 attacks = 0ULL;
+    //Piece
+    U64 bitboard = 0ULL;
+    //Set piece on board
+    set_bit(bitboard, square);
+
+    if(!side){
+        //Pawns cannot attack left on a file and right and h file
+        if((bitboard >> 7) & not_a_file)
+            attacks |= (bitboard >> 7);
+        if((bitboard >> 9) & not_h_file)
+            attacks |= (bitboard >> 9);
+    }
+    else{
+        if((bitboard << 7) & not_h_file)
+            attacks |= (bitboard << 7);
+        if((bitboard << 9) & not_a_file)
+            attacks |= (bitboard << 9);
+    }
+    return attacks;
+}
+
+//Generate the pawn attack lookup table
+void init_pawn_attack_table(){
+    for(int square=0; square<64; square++){
+        pawn_attacks[white][square] = mask_pawn_attacks(white, square);
+        pawn_attacks[black][square] = mask_pawn_attacks(black, square);
+    }
+}
+
+//Knight attacks table [square]
+U64 knight_attacks[64];
+
+//Generate knights attacks
+U64 mask_knight_attacks(int square){
+    //Attacks
+    U64 attacks = 0ULL;
+    //Piece
+    U64 bitboard = 0ULL;
+    //Set piece on board
+    set_bit(bitboard, square);
+
+    //Prevent board leakovers
+    if((bitboard >> 17) & not_h_file)
+        attacks |= (bitboard >> 17);
+    if((bitboard >> 15) & not_a_file)
+        attacks |= (bitboard >> 15);
+    if((bitboard >> 10) & not_hg_file)
+        attacks |= (bitboard >> 10);
+    if((bitboard >> 6) & not_ab_file)
+        attacks |= (bitboard >> 6);
+    if((bitboard << 17) & not_a_file)
+        attacks |= (bitboard << 17);
+    if((bitboard << 15) & not_h_file)
+        attacks |= (bitboard << 15);
+    if((bitboard << 10) & not_ab_file)
+        attacks |= (bitboard << 10);
+    if((bitboard << 6) & not_hg_file)
+        attacks |= (bitboard << 6);
+    return attacks;
+}
+
+//Generate the knight attack lookup table
+void init_knight_attack_table(){
+    for(int square=0; square<64; square++){
+        knight_attacks[square] = mask_knight_attacks(square);
+    }
+}
+
+//King attacks table [square]
+U64 king_attacks[64];
+
+//Generate king attacks
+U64 mask_king_attacks(int square){
+    //Attacks
+    U64 attacks = 0ULL;
+    //Piece
+    U64 bitboard = 0ULL;
+    //Set piece on board
+    set_bit(bitboard, square);
+
+    //Prevent board leakovers
+    //Move diagonally up right 1
+    if((bitboard >> 7) & not_a_file)
+        attacks |= (bitboard >> 7);
+    //Move up one
+    if((bitboard >> 8))
+        attacks |= (bitboard >> 8);
+    //Move diagonally up left 1
+    if((bitboard >> 9) & not_h_file)
+        attacks |= (bitboard >> 9);
+    //Move diagonally down left 1
+    if((bitboard << 7) & not_h_file)
+        attacks |= (bitboard << 7);
+    //Move down 1
+    if((bitboard << 8))
+        attacks |= (bitboard << 8);
+    //Move diagonally down right 1
+    if((bitboard << 9) & not_a_file)
+        attacks |= (bitboard << 9);
+    //Move left 1
+    if((bitboard << 1) & not_a_file)
+        attacks |= (bitboard << 1);
+    //Move right 1
+    if((bitboard >> 1) & not_h_file)
+        attacks |= (bitboard >> 1);
+    return attacks;
+}
+
+//Generate the king attack lookup table
+void init_king_attack_table(){
+    for(int square=0; square<64; square++){
+        king_attacks[square] = mask_king_attacks(square);
+    }
+}
+
+//Bishop relevant occupancy bits
+const int bishop_bits[64] = {
+    6, 5, 5, 5, 5, 5, 5, 6, 
+    5, 5, 5, 5, 5, 5, 5, 5, 
+    5, 5, 7, 7, 7, 7, 5, 5, 
+    5, 5, 7, 9, 9, 7, 5, 5, 
+    5, 5, 7, 9, 9, 7, 5, 5, 
+    5, 5, 7, 7, 7, 7, 5, 5, 
+    5, 5, 5, 5, 5, 5, 5, 5, 
+    6, 5, 5, 5, 5, 5, 5, 6
+};
+
+//Generate bishop attacks
+U64 mask_bishop_attacks(int square){
+    U64 attacks = 0ULL;
+    int rank, file;
+    int trank = square / 8;
+    int tfile = square % 8;
+
+    for(rank = trank+1, file = tfile+1; (rank <=6 && file <= 6); rank++, file++){
+        attacks |= (1ULL << (rank * 8 + file));
+    }
+    for(rank = trank-1, file = tfile+1; (rank >=1 && file <= 6); rank--, file++){
+        attacks |= (1ULL << (rank * 8 + file));
+    }
+    for(rank = trank+1, file = tfile-1; (rank <=6 && file >= 1); rank++, file--){
+        attacks |= (1ULL << (rank * 8 + file));
+    }
+    for(rank = trank-1, file = tfile-1; (rank >=1 && file >= 1); rank--, file--){
+        attacks |= (1ULL << (rank * 8 + file));
+    }
+    return attacks;
+}
+
+//Generate bishop attacks during a game
+U64 bishop_attacks_game(int square, U64 block){
+    U64 attacks = 0ULL;
+    int rank, file;
+    int trank = square / 8;
+    int tfile = square % 8;
+
+    for(rank = trank+1, file = tfile+1; (rank <=7 && file <= 7); rank++, file++){
+        attacks |= (1ULL << (rank * 8 + file));
+        if(1ULL << (rank * 8 + file) & block){
+            break;
+        }
+    }
+    for(rank = trank-1, file = tfile+1; (rank >=0 && file <= 7); rank--, file++){
+        attacks |= (1ULL << (rank * 8 + file));
+        if(1ULL << (rank * 8 + file) & block){
+            break;
+        }
+    }
+    for(rank = trank+1, file = tfile-1; (rank <=7 && file >= 0); rank++, file--){
+        attacks |= (1ULL << (rank * 8 + file));
+        if(1ULL << (rank * 8 + file) & block){
+            break;
+        }
+    }
+    for(rank = trank-1, file = tfile-1; (rank >=0 && file >= 0); rank--, file--){
+        attacks |= (1ULL << (rank * 8 + file));
+        if(1ULL << (rank * 8 + file) & block){
+            break;
+        }
+    }
+    return attacks;
+}
+
+//Rook relevant occupancy bits
+const int rook_bits = {
+    12, 11, 11, 11, 11, 11, 11, 12, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    12, 11, 11, 11, 11, 11, 11, 12
+};
+
+//Generate rook attacks
+U64 mask_rook_attacks(int square){
+    U64 attacks = 0ULL;
+    int rank, file;
+    int trank = square / 8;
+    int tfile = square % 8;
+
+    for(rank = trank+1; rank <=6; rank++){
+        attacks |= (1ULL << (rank * 8 + tfile));
+    }
+    for(rank = trank-1; rank >=1; rank--){
+        attacks |= (1ULL << (rank * 8 + tfile));
+    }
+    for(file = tfile+1; file <=6; file++){
+        attacks |= (1ULL << (trank * 8 + file));
+    }
+    for(file = tfile-1; file >=1; file--){
+        attacks |= (1ULL << (trank * 8 + file));
+    }
+    return attacks;
+}
+
+//Generate rook attacks during a game
+U64 rook_attacks_game(int square, U64 block){
+    U64 attacks = 0ULL;
+    int rank, file;
+    int trank = square / 8;
+    int tfile = square % 8;
+
+    for(rank = trank+1; rank <=6; rank++){
+        attacks |= (1ULL << (rank * 8 + tfile));
+        if(1ULL << (rank * 8 + tfile) & block){
+            break;
+        }
+    }
+    for(rank = trank-1; rank >=1; rank--){
+        attacks |= (1ULL << (rank * 8 + tfile));
+        if(1ULL << (rank * 8 + tfile) & block){
+            break;
+        }
+    }
+    for(file = tfile+1; file <=6; file++){
+        attacks |= (1ULL << (trank * 8 + file));
+        if(1ULL << (trank * 8 + file) & block){
+            break;
+        }
+    }
+    for(file = tfile-1; file >=1; file--){
+        attacks |= (1ULL << (trank * 8 + file));
+        if(1ULL << (trank * 8 + file) & block){
+            break;
+        }
+    }
+    return attacks;
+}
+
+U64 set_occupancy(int index, int bits_in_mask, U64 attack_mask){
+    U64 occupancy = 0ULL;
+
+    for(int count = 0; count < bits_in_mask; count++){
+        int square = get_lsb_index(attack_mask);
+        rem_bit(attack_mask, square);
+        if(index & (1<<count))
+            occupancy |= (1ULL << square);
+    }
+
+    return occupancy;
+}
+
+void init_piece_attack_tables(){
+    init_pawn_attack_table();
+    init_knight_attack_table();
+    init_king_attack_table();
+}
+
+int main(){
+    init_piece_attack_tables();
+    
+    for(int rank=0;rank<8;rank++){
+        for(int file=0;file<8;file++){
+            int square = rank*8+file;
+
+            printf("%d, ", count_bits(mask_rook_attacks(square)));
+        }
+        printf("\n");
+    }
+    
+    return 0;
+}
