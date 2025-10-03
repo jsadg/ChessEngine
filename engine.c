@@ -30,6 +30,48 @@ const char *square_to_coords[] = {
     "a1","b1","c1","d1","e1","f1","g1","h1"
 };
 
+
+//Rook magic numbers sourced from Pradyumna Kannan
+static const U64 rook_magics[64] = {
+    0x8a80104000800020ULL, 0x140002000100040ULL,   0x2801880a0017001ULL,  0x100081001000420ULL,
+    0x200020010080420ULL,   0x3001c0002010008ULL,  0x8480008002000100ULL, 0x2080088004402900ULL,
+    0x800098204000ULL,      0x2024401000200040ULL, 0x100802000801000ULL,  0x120800800801000ULL,
+    0x208808088000400ULL,   0x2802200800400ULL,    0x2200800100020080ULL, 0x801000060821100ULL,
+    0x80044006422000ULL,    0x100808020004000ULL,  0x12108a0010204200ULL, 0x140848010000802ULL,
+    0x481828014002800ULL,   0x8094004002004100ULL, 0x4010040010010802ULL, 0x20008806104ULL,
+    0x100400080208000ULL,   0x2040002120081000ULL, 0x21200680100081ULL,   0x20100080080080ULL,
+    0x2000a00200410ULL,     0x20080800400ULL,      0x80088400100102ULL,   0x80004600042881ULL,
+    0x4040008040800020ULL,  0x440003000200801ULL,  0x4200011004500ULL,    0x188020010100100ULL,
+    0x14800401802800ULL,    0x2080040080800200ULL, 0x124080204001001ULL,  0x200046502000484ULL,
+    0x480400080088020ULL,   0x1000422010034000ULL, 0x30200100110040ULL,   0x100021010009ULL,
+    0x2002080100110004ULL,  0x202008004008002ULL,  0x20020004010100ULL,   0x2048440040820001ULL,
+    0x101002200408200ULL,   0x40802000401080ULL,   0x4008142004410100ULL, 0x2060820c0120200ULL,
+    0x1001004080100ULL,     0x20c020080040080ULL,  0x2935610830022400ULL, 0x44440041009200ULL,
+    0x280001040802101ULL,   0x2100190040002085ULL, 0x80c0084100102001ULL, 0x4024081001000421ULL,
+    0x20030a0244872ULL,     0x12001008414402ULL,   0x2006104900a0804ULL,  0x1004081002402ULL
+};
+
+//Bishop magic numbers sourced from Pradyumna Kannan
+static const U64 bishop_magics[64] = {
+    0x40040844404084ULL,   0x2004208a004208ULL,   0x10190041080202ULL,  0x108060845042010ULL,
+    0x581104180800210ULL,  0x2112080446200010ULL, 0x1080820820060210ULL, 0x3c0808410220200ULL,
+    0x4050404440404ULL,    0x21001420088ULL,      0x24d0080801082102ULL, 0x1020a0a020400ULL,
+    0x40308200402ULL,      0x4011002100800ULL,    0x401484104104005ULL,  0x801010402020200ULL,
+    0x400210c3880100ULL,   0x404022024108200ULL,  0x810018200204102ULL,  0x4002801a02003ULL,
+    0x85040820080400ULL,   0x810102c808880400ULL, 0xe900410884800ULL,    0x8002020480840102ULL,
+    0x220200865090201ULL,  0x2010100a02021202ULL, 0x152048408022401ULL,  0x20080002081110ULL,
+    0x4001001021004000ULL, 0x800040400a011002ULL, 0xe4004081011002ULL,   0x1c004001012080ULL,
+    0x8004200962a00220ULL, 0x8422100208500202ULL, 0x2000402200300c08ULL, 0x8646020080080080ULL,
+    0x80020a0200100808ULL, 0x2010004880111000ULL, 0x623000a080011400ULL, 0x42008c0340209202ULL,
+    0x209188240001000ULL,  0x400408a884001ULL,   0x110400a6080400ULL,   0x1840060a44020800ULL,
+    0x90080104000041ULL,   0x201011000808101ULL,  0x1a2208080504f080ULL, 0x8012020600211212ULL,
+    0x500861011240000ULL,  0x180806108200800ULL,  0x4000020e01040044ULL, 0x300000261044000aULL,
+    0x802241102020002ULL,  0x20906061210001ULL,   0x5a84841004010310ULL, 0x4010801011c04ULL,
+    0xa010109502200ULL,    0x4a02012000ULL,       0x500201010098b028ULL, 0x8040002811040900ULL,
+    0x28000010020204ULL,   0x6000020202d0240ULL,  0x8918844842082200ULL, 0x4010011029020020ULL
+};
+
+
 //Debruijn board table for lsb calculation
 static const int index64[64] = {
      0,  1, 48,  2, 57, 49, 28,  3,
@@ -44,13 +86,13 @@ static const int index64[64] = {
 
 //Macros
 //Sets a given bit by making the target bit a 1 and oring it
-#define set_bit(bitboard, square) (bitboard |= (1ULL << square))
+#define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
 
 //Checks a given bit on the board by making the target but a 1 and anding it
-#define get_bit(bitboard, square) (bitboard & (1ULL << square))
+#define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
 
 //Removes a given bit by making everything a 1 other than the target bit then anding it
-#define rem_bit(bitboard, square) (bitboard &= ~(1ULL << square))
+#define rem_bit(bitboard, square) ((bitboard) &= ~(1ULL << (square)))
 
 //Counts the bits within the bitboard
 static inline int count_bits(U64 bitboard){
@@ -221,6 +263,19 @@ void init_king_attack_table(){
     }
 }
 
+U64 set_occupancy(int index, int bits_in_mask, U64 attack_mask){
+    U64 occupancy = 0ULL;
+
+    for(int count = 0; count < bits_in_mask; count++){
+        int square = get_lsb_index(attack_mask);
+        rem_bit(attack_mask, square);
+        if(index & (1<<count))
+            occupancy |= (1ULL << square);
+    }
+
+    return occupancy;
+}
+
 //Bishop relevant occupancy bits
 const int bishop_bits[64] = {
     6, 5, 5, 5, 5, 5, 5, 6, 
@@ -232,6 +287,9 @@ const int bishop_bits[64] = {
     5, 5, 5, 5, 5, 5, 5, 5, 
     6, 5, 5, 5, 5, 5, 5, 6
 };
+
+U64 bishop_masks[64];
+U64 bishop_attacks[64][512];
 
 //Generate bishop attacks
 U64 mask_bishop_attacks(int square){
@@ -289,8 +347,28 @@ U64 bishop_attacks_game(int square, U64 block){
     return attacks;
 }
 
+void init_bishop_attacks(){
+    for(int square=0; square<64; square++){
+        bishop_masks[square] = mask_bishop_attacks(square);
+        int bit_count = count_bits(bishop_masks[square]);
+        int occupancy_indices = (1 << bit_count);
+        for(int i=0; i<occupancy_indices; i++){
+            U64 occupancy = set_occupancy(i, bit_count, bishop_masks[square]);
+            int magic_index = occupancy * bishop_magics[square] >> (64-bishop_bits[square]);
+            bishop_attacks[square][magic_index] = bishop_attacks_game(square, occupancy);
+        }
+    }
+}
+
+static inline U64 get_bishop_attacks(int square, U64 occupancy){
+    occupancy &= bishop_masks[square];
+    occupancy *= bishop_magics[square];
+    occupancy >>= 64-bishop_bits[square];
+    return bishop_attacks[square][occupancy];
+}
+
 //Rook relevant occupancy bits
-const int rook_bits = {
+const int rook_bits[64] = {
     12, 11, 11, 11, 11, 11, 11, 12, 
     11, 10, 10, 10, 10, 10, 10, 11, 
     11, 10, 10, 10, 10, 10, 10, 11, 
@@ -300,6 +378,11 @@ const int rook_bits = {
     11, 10, 10, 10, 10, 10, 10, 11, 
     12, 11, 11, 11, 11, 11, 11, 12
 };
+
+//Rook attack mask
+U64 rook_masks[64];
+U64 rook_attacks[64][4096];
+
 
 //Generate rook attacks
 U64 mask_rook_attacks(int square){
@@ -330,25 +413,25 @@ U64 rook_attacks_game(int square, U64 block){
     int trank = square / 8;
     int tfile = square % 8;
 
-    for(rank = trank+1; rank <=6; rank++){
+    for(rank = trank+1; rank <=7; rank++){
         attacks |= (1ULL << (rank * 8 + tfile));
         if(1ULL << (rank * 8 + tfile) & block){
             break;
         }
     }
-    for(rank = trank-1; rank >=1; rank--){
+    for(rank = trank-1; rank >=0; rank--){
         attacks |= (1ULL << (rank * 8 + tfile));
         if(1ULL << (rank * 8 + tfile) & block){
             break;
         }
     }
-    for(file = tfile+1; file <=6; file++){
+    for(file = tfile+1; file <=7; file++){
         attacks |= (1ULL << (trank * 8 + file));
         if(1ULL << (trank * 8 + file) & block){
             break;
         }
     }
-    for(file = tfile-1; file >=1; file--){
+    for(file = tfile-1; file >=0; file--){
         attacks |= (1ULL << (trank * 8 + file));
         if(1ULL << (trank * 8 + file) & block){
             break;
@@ -357,36 +440,44 @@ U64 rook_attacks_game(int square, U64 block){
     return attacks;
 }
 
-U64 set_occupancy(int index, int bits_in_mask, U64 attack_mask){
-    U64 occupancy = 0ULL;
-
-    for(int count = 0; count < bits_in_mask; count++){
-        int square = get_lsb_index(attack_mask);
-        rem_bit(attack_mask, square);
-        if(index & (1<<count))
-            occupancy |= (1ULL << square);
+void init_rook_attacks(){
+    for(int square=0; square<64; square++){
+        rook_masks[square] = mask_rook_attacks(square);
+        int bit_count = count_bits(rook_masks[square]);
+        int occupancy_indices = (1 << bit_count);
+        for(int i=0; i<occupancy_indices; i++){
+            U64 occupancy = set_occupancy(i, bit_count, rook_masks[square]);
+            int magic_index = occupancy * rook_magics[square] >> (64-rook_bits[square]);
+            rook_attacks[square][magic_index] = rook_attacks_game(square, occupancy);
+        }
     }
-
-    return occupancy;
 }
+
+static inline U64 get_rook_attacks(int square, U64 occupancy){
+    occupancy &= rook_masks[square];
+    occupancy *= rook_magics[square];
+    occupancy >>= 64-rook_bits[square];
+    return rook_attacks[square][occupancy];
+}
+
 
 void init_piece_attack_tables(){
     init_pawn_attack_table();
     init_knight_attack_table();
     init_king_attack_table();
+    init_bishop_attacks();
+    init_rook_attacks();
 }
 
 int main(){
     init_piece_attack_tables();
     
-    for(int rank=0;rank<8;rank++){
-        for(int file=0;file<8;file++){
-            int square = rank*8+file;
+    U64 occupancy = 0ULL;
+    set_bit(occupancy, c5);
+    set_bit(occupancy, h5);
+    print_bitboard(occupancy);
 
-            printf("%d, ", count_bits(mask_rook_attacks(square)));
-        }
-        printf("\n");
-    }
+    print_bitboard(get_rook_attacks(h4, occupancy));
     
     return 0;
 }
