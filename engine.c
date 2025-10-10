@@ -12,12 +12,15 @@ enum{
     a4, b4, c4, d4, e4, f4, g4, h4,
     a3, b3, c3, d3, e3, f3, g3, h3,
     a2, b2, c2, d2, e2, f2, g2, h2,
-    a1, b1, c1, d1, e1, f1, g1, h1  
+    a1, b1, c1, d1, e1, f1, g1, h1, no_sq
 };
 
 enum{
     white, black
 };
+
+enum {P, N, B, R, Q, K, p, n, b, r, q, k};
+
 
 const char *square_to_coords[] = {
     "a8","b8","c8","d8","e8","f8","g8","h8",
@@ -30,6 +33,47 @@ const char *square_to_coords[] = {
     "a1","b1","c1","d1","e1","f1","g1","h1"
 };
 
+//ASCII pieces
+char ascii_pieces[12] = "PNBRQKpnbrqk";
+
+//Unicode pieces
+char *unicode_pieces[12] = {"♟︎", "♞", "♝", "♜", "♛", "♚", "♙", "♘", "♗", "♖", "♕", "♔"};
+
+int char_pieces[] = {
+    ['P'] = P,
+    ['N'] = N,
+    ['B'] = B,
+    ['R'] = R,
+    ['Q'] = Q,
+    ['K'] = K,
+    ['p'] = p,
+    ['n'] = n,
+    ['b'] = b,
+    ['r'] = r,
+    ['q'] = q,
+    ['k'] = k
+};
+//Piece bitboards
+U64 bitboards[12];
+
+//Occupancy bitboards
+U64 occupancies[3];
+
+int side = -1;
+//Enpassant square
+int enpassant = no_sq;
+
+int castle;
+
+/*
+    Castling representation
+    0001 white can castle kingside
+    0010 white can castle queenside
+    0100 black can castle kingside
+    1000 black can castle queenside
+*/
+enum {white_kingside_castle=1, white_queenside_castle=2, black_kingside_castle=4, black_queenside_castle=8};
+ 
 
 //Rook magic numbers sourced from Pradyumna Kannan
 static const U64 rook_magics[64] = {
@@ -472,12 +516,10 @@ void init_piece_attack_tables(){
 int main(){
     init_piece_attack_tables();
     
-    U64 occupancy = 0ULL;
-    set_bit(occupancy, c5);
-    set_bit(occupancy, h5);
-    print_bitboard(occupancy);
+    set_bit(bitboards[P], e2);
+    print_bitboard(bitboards[P]);
 
-    print_bitboard(get_rook_attacks(h4, occupancy));
-    
-    return 0;
+    printf("piece: %c\n", ascii_pieces[P]);
+    printf("piece: %s\n", unicode_pieces[p]);
+
 }
