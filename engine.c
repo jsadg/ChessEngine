@@ -36,9 +36,6 @@ const char *square_to_coords[] = {
 //ASCII pieces
 char ascii_pieces[12] = "PNBRQKpnbrqk";
 
-//Unicode pieces
-char *unicode_pieces[12] = {"♟︎", "♞", "♝", "♜", "♛", "♚", "♙", "♘", "♗", "♖", "♕", "♔"};
-
 int char_pieces[] = {
     ['P'] = P,
     ['N'] = N,
@@ -59,7 +56,7 @@ U64 bitboards[12];
 //Occupancy bitboards
 U64 occupancies[3];
 
-int side = -1;
+int side;
 //Enpassant square
 int enpassant = no_sq;
 
@@ -72,7 +69,13 @@ int castle;
     0100 black can castle kingside
     1000 black can castle queenside
 */
-enum {white_kingside_castle=1, white_queenside_castle=2, black_kingside_castle=4, black_queenside_castle=8};
+//wkc = white kingsde castle
+//wqc = white queenside castle
+//bkc = black kingsde castle
+//wqc = black queenside castle
+
+
+enum {wkc=1, wqc=2, bkc=4, bqc=8};
  
 
 //Rook magic numbers sourced from Pradyumna Kannan
@@ -163,14 +166,44 @@ void print_bitboard(U64 bitboard){
             if(file == 0){
                 printf(" %d ", 8 - rank);
             }
-            printf(" %d ", get_bit(bitboard, square) ? 1 : 0);
+            printf(" %d", get_bit(bitboard, square) ? 1 : 0);
         }
         printf("\n");
     }
-    printf("    a  b  c  d  e  f  g  h\n\n");
+    printf("    a b c d e f g h\n\n");
 
     //Decimal representation of bitboard
     printf("Bitboard: %llud\n\n", bitboard);
+}
+
+void print_board(){
+    for(int rank = 0; rank < 8;rank++){
+        for(int file = 0; file < 8; file++){
+            int square = rank*8+file;
+
+            if(!file)
+                printf(" %d ", 8 - rank);
+
+            int piece=-1;
+
+            for(int bb_piece=P; bb_piece <= k; bb_piece++){
+                if(get_bit(bitboards[bb_piece], square)){
+                    piece = bb_piece;
+                }
+            }
+
+            printf(" %c", (piece == -1) ? '.' : ascii_pieces[piece]);
+        }
+        printf("\n");
+    }
+    //Board files
+    printf("    a b c d e f g h\n\n");
+    //Side to move
+    printf("Side:  %s\n", !side ? "white" : "black");
+    //Enpasssant square
+    printf("Enpassant:  %s\n", (enpassant != no_sq) ? square_to_coords[enpassant]: "no");
+    //Castling rights
+    printf("Castling: %c%c%c%c\n\n", (castle & wkc) ? 'K' : '-', (castle & wqc) ? 'Q' : '-', (castle & bkc) ? 'k' : '-', (castle & bqc) ? 'q' : '-');
 }
 
 //Bitboard of 1 except 0 for the a file (pawns)
@@ -516,10 +549,52 @@ void init_piece_attack_tables(){
 int main(){
     init_piece_attack_tables();
     
+    //White pawns
+    set_bit(bitboards[P], a2);
+    set_bit(bitboards[P], b2);
+    set_bit(bitboards[P], c2);
+    set_bit(bitboards[P], d2);
     set_bit(bitboards[P], e2);
-    print_bitboard(bitboards[P]);
+    set_bit(bitboards[P], f2);
+    set_bit(bitboards[P], g2);
+    set_bit(bitboards[P], h2);
+    //White pieces
+    set_bit(bitboards[R], a1);
+    set_bit(bitboards[N], b1);
+    set_bit(bitboards[B], c1);
+    set_bit(bitboards[Q], d1);
+    set_bit(bitboards[K], e1);
+    set_bit(bitboards[B], f1);
+    set_bit(bitboards[N], g1);
+    set_bit(bitboards[R], h1);
+    //Black pawns
+    set_bit(bitboards[p], a7);
+    set_bit(bitboards[p], b7);
+    set_bit(bitboards[p], c7);
+    set_bit(bitboards[p], d7);
+    set_bit(bitboards[p], e7);
+    set_bit(bitboards[p], f7);
+    set_bit(bitboards[p], g7);
+    set_bit(bitboards[p], h7);
+    //Black pieces
+    set_bit(bitboards[r], a8);
+    set_bit(bitboards[n], b8);
+    set_bit(bitboards[b], c8);
+    set_bit(bitboards[q], d8);
+    set_bit(bitboards[k], e8);
+    set_bit(bitboards[b], f8);
+    set_bit(bitboards[n], g8);
+    set_bit(bitboards[r], h8);
 
-    printf("piece: %c\n", ascii_pieces[P]);
-    printf("piece: %s\n", unicode_pieces[p]);
+
+    side = black;
+    enpassant = e3;
+    castle |= wkc;
+    castle |= wqc;
+    castle |= bkc;
+    castle |= bqc;
+
+
+    print_board();
 
 }
