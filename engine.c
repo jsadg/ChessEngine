@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 //Bitboard data type
 #define U64 unsigned long long
@@ -16,7 +17,7 @@ enum{
 };
 
 enum{
-    white, black
+    white, black, both
 };
 
 enum {P, N, B, R, Q, K, p, n, b, r, q, k};
@@ -150,8 +151,9 @@ static inline int count_bits(U64 bitboard){
 
 //Gets the lsb location of the bitboard
 static inline int get_lsb_index(U64 bitboard) {
-    if (bitboard == 0)
+    if (bitboard == 0){
         return -1;
+    }
 
     U64 isolated = bitboard & -bitboard;
     U64 debruijn = (isolated * 0x03f79d71b4cb0a89ULL) >> 58;
@@ -162,7 +164,7 @@ static inline int get_lsb_index(U64 bitboard) {
 void print_bitboard(U64 bitboard){
     for(int rank = 0; rank < 8; rank++){
         for(int file = 0; file < 8; file++){
-            int square = rank*8 + file;
+            int square = rank * 8 + file;
             if(file == 0){
                 printf(" %d ", 8 - rank);
             }
@@ -179,10 +181,11 @@ void print_bitboard(U64 bitboard){
 void print_board(){
     for(int rank = 0; rank < 8;rank++){
         for(int file = 0; file < 8; file++){
-            int square = rank*8+file;
+            int square = rank * 8 + file;
 
-            if(!file)
+            if(!file){
                 printf(" %d ", 8 - rank);
+            }
 
             int piece=-1;
 
@@ -204,6 +207,98 @@ void print_board(){
     printf("Enpassant:  %s\n", (enpassant != no_sq) ? square_to_coords[enpassant]: "no");
     //Castling rights
     printf("Castling: %c%c%c%c\n\n", (castle & wkc) ? 'K' : '-', (castle & wqc) ? 'Q' : '-', (castle & bkc) ? 'k' : '-', (castle & bqc) ? 'q' : '-');
+}
+
+//Convert a given FEN to board position
+void parse_fen(char* fen){
+    //Reset board and occupancies
+    memset(bitboards, 0ULL, sizeof(bitboards));
+    memset(occupancies, 0ULL, sizeof(occupancies));
+    //Reset variables
+    side = 0;
+    enpassant = no_sq;
+    castle = 0;
+
+    for(int rank = 0; rank < 8; rank ++){
+        for(int file = 0; file < 8; file++){
+            int square = rank * 8 + file;
+            //Match piece from FEN
+            if((*fen >= 'a' && *fen <= 'z') || (*fen >= 'A' && *fen <= 'Z')){
+                int piece = char_pieces[*fen];
+                set_bit(bitboards[piece], square);
+                *fen++;
+            }
+            //Match empty space from FEN
+            if(*fen >= '0' && *fen <= '9'){
+
+                //Convert char 0 to int 0
+                int offset = *fen - '0';
+
+                int piece=-1;
+                for(int bb_piece=P; bb_piece <= k; bb_piece++){
+                    if(get_bit(bitboards[bb_piece], square)){
+                        piece = bb_piece;
+                    }
+                }
+                //If no piece on square
+                if(piece == -1){
+                    file--;
+                }
+
+                //Adjust file counter
+                file += offset;
+
+                *fen++;
+            }
+
+            if(*fen == '/'){
+                *fen++;
+            }
+
+        }
+    }
+    //Move to side to move
+    *fen++;
+    (*fen == 'w') ? (side = white) : (side = black);
+
+    //Move to castling rights
+    fen+=2;
+    while(*fen != ' '){
+        switch(*fen){
+            case 'K': castle |= wkc; break;
+            case 'Q': castle |= wqc; break;
+            case 'k': castle |= bkc; break;
+            case 'q': castle |= bqc; break;
+            case '-': break;
+        }
+        *fen++;
+    }
+    //Move to enpassant square
+    fen++;
+
+    if(*fen != '-'){
+        int file = fen[0] - 'a';
+        int rank = 8 - (fen[1] - '0');
+
+        enpassant = rank * 8 + file;
+    }
+    else{
+        enpassant = no_sq;
+    }
+    printf("fen: %s\n", fen);
+
+    //Loop over white piece bitboards
+    for(int piece = P; piece <= K; piece++){
+        occupancies[white] |= bitboards[piece];
+    }
+    //Loop over black piece bitboards
+    for(int piece = p; piece <= k; piece++){
+        occupancies[black] |= bitboards[piece];
+    }
+
+    occupancies[both] |= occupancies[white];
+    occupancies[both] |= occupancies[black];
+
 }
 
 //Bitboard of 1 except 0 for the a file (pawns)
@@ -232,16 +327,20 @@ U64 mask_pawn_attacks(int side, int square){
 
     if(!side){
         //Pawns cannot attack left on a file and right and h file
-        if((bitboard >> 7) & not_a_file)
+        if((bitboard >> 7) & not_a_file){
             attacks |= (bitboard >> 7);
-        if((bitboard >> 9) & not_h_file)
+        }
+        if((bitboard >> 9) & not_h_file){
             attacks |= (bitboard >> 9);
+        }
     }
     else{
-        if((bitboard << 7) & not_h_file)
+        if((bitboard << 7) & not_h_file){
             attacks |= (bitboard << 7);
-        if((bitboard << 9) & not_a_file)
+        }
+        if((bitboard << 9) & not_a_file){
             attacks |= (bitboard << 9);
+        }
     }
     return attacks;
 }
@@ -267,22 +366,30 @@ U64 mask_knight_attacks(int square){
     set_bit(bitboard, square);
 
     //Prevent board leakovers
-    if((bitboard >> 17) & not_h_file)
+    if((bitboard >> 17) & not_h_file){
         attacks |= (bitboard >> 17);
-    if((bitboard >> 15) & not_a_file)
+    }
+    if((bitboard >> 15) & not_a_file){
         attacks |= (bitboard >> 15);
-    if((bitboard >> 10) & not_hg_file)
+    }
+    if((bitboard >> 10) & not_hg_file){
         attacks |= (bitboard >> 10);
-    if((bitboard >> 6) & not_ab_file)
+    }
+    if((bitboard >> 6) & not_ab_file){
         attacks |= (bitboard >> 6);
-    if((bitboard << 17) & not_a_file)
+    }
+    if((bitboard << 17) & not_a_file){
         attacks |= (bitboard << 17);
-    if((bitboard << 15) & not_h_file)
+    }
+    if((bitboard << 15) & not_h_file){
         attacks |= (bitboard << 15);
-    if((bitboard << 10) & not_ab_file)
+    }
+    if((bitboard << 10) & not_ab_file){
         attacks |= (bitboard << 10);
-    if((bitboard << 6) & not_hg_file)
+    }
+    if((bitboard << 6) & not_hg_file){
         attacks |= (bitboard << 6);
+    }
     return attacks;
 }
 
@@ -307,29 +414,37 @@ U64 mask_king_attacks(int square){
 
     //Prevent board leakovers
     //Move diagonally up right 1
-    if((bitboard >> 7) & not_a_file)
+    if((bitboard >> 7) & not_a_file){
         attacks |= (bitboard >> 7);
+    }
     //Move up one
-    if((bitboard >> 8))
+    if((bitboard >> 8)){
         attacks |= (bitboard >> 8);
+    }
     //Move diagonally up left 1
-    if((bitboard >> 9) & not_h_file)
+    if((bitboard >> 9) & not_h_file){
         attacks |= (bitboard >> 9);
+    }
     //Move diagonally down left 1
-    if((bitboard << 7) & not_h_file)
+    if((bitboard << 7) & not_h_file){
         attacks |= (bitboard << 7);
+    }
     //Move down 1
-    if((bitboard << 8))
+    if((bitboard << 8)){
         attacks |= (bitboard << 8);
+    }
     //Move diagonally down right 1
-    if((bitboard << 9) & not_a_file)
+    if((bitboard << 9) & not_a_file){
         attacks |= (bitboard << 9);
+    }
     //Move left 1
-    if((bitboard << 1) & not_a_file)
+    if((bitboard << 1) & not_a_file){
         attacks |= (bitboard << 1);
+    }
     //Move right 1
-    if((bitboard >> 1) & not_h_file)
+    if((bitboard >> 1) & not_h_file){
         attacks |= (bitboard >> 1);
+    }
     return attacks;
 }
 
@@ -346,8 +461,9 @@ U64 set_occupancy(int index, int bits_in_mask, U64 attack_mask){
     for(int count = 0; count < bits_in_mask; count++){
         int square = get_lsb_index(attack_mask);
         rem_bit(attack_mask, square);
-        if(index & (1<<count))
+        if(index & (1<<count)){
             occupancy |= (1ULL << square);
+        }
     }
 
     return occupancy;
@@ -549,52 +665,6 @@ void init_piece_attack_tables(){
 int main(){
     init_piece_attack_tables();
     
-    //White pawns
-    set_bit(bitboards[P], a2);
-    set_bit(bitboards[P], b2);
-    set_bit(bitboards[P], c2);
-    set_bit(bitboards[P], d2);
-    set_bit(bitboards[P], e2);
-    set_bit(bitboards[P], f2);
-    set_bit(bitboards[P], g2);
-    set_bit(bitboards[P], h2);
-    //White pieces
-    set_bit(bitboards[R], a1);
-    set_bit(bitboards[N], b1);
-    set_bit(bitboards[B], c1);
-    set_bit(bitboards[Q], d1);
-    set_bit(bitboards[K], e1);
-    set_bit(bitboards[B], f1);
-    set_bit(bitboards[N], g1);
-    set_bit(bitboards[R], h1);
-    //Black pawns
-    set_bit(bitboards[p], a7);
-    set_bit(bitboards[p], b7);
-    set_bit(bitboards[p], c7);
-    set_bit(bitboards[p], d7);
-    set_bit(bitboards[p], e7);
-    set_bit(bitboards[p], f7);
-    set_bit(bitboards[p], g7);
-    set_bit(bitboards[p], h7);
-    //Black pieces
-    set_bit(bitboards[r], a8);
-    set_bit(bitboards[n], b8);
-    set_bit(bitboards[b], c8);
-    set_bit(bitboards[q], d8);
-    set_bit(bitboards[k], e8);
-    set_bit(bitboards[b], f8);
-    set_bit(bitboards[n], g8);
-    set_bit(bitboards[r], h8);
 
-
-    side = black;
-    enpassant = e3;
-    castle |= wkc;
-    castle |= wqc;
-    castle |= bkc;
-    castle |= bqc;
-
-
-    print_board();
 
 }
