@@ -653,6 +653,28 @@ static inline U64 get_rook_attacks(int square, U64 occupancy){
     return rook_attacks[square][occupancy];
 }
 
+static inline U64 get_queen_attacks(int square, U64 occupancy){
+    
+    U64 queen_attacks = 0ULL;
+
+    U64 bishop_occupancy = occupancy;
+    U64 rook_occupancy = occupancy;
+
+    //Get bishop attacks
+    bishop_occupancy &= bishop_masks[square];
+    bishop_occupancy *= bishop_magics[square];
+    bishop_occupancy >>= 64-bishop_bits[square];
+    queen_attacks = bishop_attacks[square][bishop_occupancy];
+    
+    //Get rook attacks
+    rook_occupancy &= rook_masks[square];
+    rook_occupancy *= rook_magics[square];
+    rook_occupancy >>= 64-rook_bits[square];
+    queen_attacks |= rook_attacks[square][rook_occupancy];
+
+    return queen_attacks;
+}
+
 
 void init_piece_attack_tables(){
     init_pawn_attack_table();
@@ -660,11 +682,15 @@ void init_piece_attack_tables(){
     init_king_attack_table();
     init_bishop_attacks();
     init_rook_attacks();
+
 }
 
 int main(){
     init_piece_attack_tables();
     
+    U64 occupancy = 0ULL;
+
+    print_bitboard(get_queen_attacks(d4, occupancy));
 
 
 }
