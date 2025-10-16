@@ -285,7 +285,6 @@ void parse_fen(char* fen){
     else{
         enpassant = no_sq;
     }
-    printf("fen: %s\n", fen);
 
     //Loop over white piece bitboards
     for(int piece = P; piece <= K; piece++){
@@ -682,15 +681,66 @@ void init_piece_attack_tables(){
     init_king_attack_table();
     init_bishop_attacks();
     init_rook_attacks();
-
 }
+
+static inline int is_square_attacked(int square, int side){
+    //Attacked by white pawns by reversing black pawn attacks
+    if((side == white) && (pawn_attacks[black][square] & bitboards[P])){
+        return 1;
+    }
+    //Attacked by black pawns by reversing white pawn attacks
+    if((side == black) && (pawn_attacks[white][square] & bitboards[p])){
+        return 1;
+    }
+    //Attacked by knights by reversing opposite color
+    if(knight_attacks[square] & ((side == white) ? bitboards[N] : bitboards[n])){
+        return 1;
+    }
+    //Attacked by bishops by reversing opposite color
+    if(get_bishop_attacks(square, occupancies[both]) & ((side == white) ? bitboards[B] : bitboards[b])){
+        return 1;
+    }
+    //Attacked by rooks by reversing opposite color
+    if(get_rook_attacks(square, occupancies[both]) & ((side == white) ? bitboards[R] : bitboards[r])){
+        return 1;
+    }
+    //Attacked by queens by reversing opposite color
+    if(get_queen_attacks(square, occupancies[both]) & ((side == white) ? bitboards[Q] : bitboards[q])){
+        return 1;
+    }
+    //Attacked by kings by reversing opposite color
+    if(king_attacks[square] & ((side == white) ? bitboards[K] : bitboards[k])){
+        return 1;
+    }
+    //Fefault not attacked
+    return 0;
+}
+
+void print_attacked_squares(int side){
+    for(int rank = 0; rank < 8; rank++){
+        for(int file = 0; file < 8; file++){
+            int square = rank * 8 + file;
+
+            if(!file){
+                printf("  %d ", 8-rank);
+
+                //Checks if square is attacked
+            }
+            printf("%d ", is_square_attacked(square, side) ? 1 : 0);
+        }
+        printf("\n");
+    }
+    printf("    a b c d e f g h\n\n");
+}
+
 
 int main(){
     init_piece_attack_tables();
     
-    U64 occupancy = 0ULL;
-
-    print_bitboard(get_queen_attacks(d4, occupancy));
+    parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - ");
+    print_board();
+ 
+    print_attacked_squares(white);
 
 
 }
