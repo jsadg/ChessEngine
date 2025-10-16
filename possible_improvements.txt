@@ -1,0 +1,1 @@
+Improve parse_fen function for dataset training/perft

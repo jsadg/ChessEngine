@@ -226,7 +226,7 @@ void parse_fen(char* fen){
             if((*fen >= 'a' && *fen <= 'z') || (*fen >= 'A' && *fen <= 'Z')){
                 int piece = char_pieces[*fen];
                 set_bit(bitboards[piece], square);
-                *fen++;
+                fen++;
             }
             //Match empty space from FEN
             if(*fen >= '0' && *fen <= '9'){
@@ -248,17 +248,17 @@ void parse_fen(char* fen){
                 //Adjust file counter
                 file += offset;
 
-                *fen++;
+                fen++;
             }
 
             if(*fen == '/'){
-                *fen++;
+                fen++;
             }
 
         }
     }
     //Move to side to move
-    *fen++;
+    fen++;
     (*fen == 'w') ? (side = white) : (side = black);
 
     //Move to castling rights
@@ -271,7 +271,7 @@ void parse_fen(char* fen){
             case 'q': castle |= bqc; break;
             case '-': break;
         }
-        *fen++;
+        fen++;
     }
     //Move to enpassant square
     fen++;
@@ -731,6 +731,42 @@ void print_attacked_squares(int side){
         printf("\n");
     }
     printf("    a b c d e f g h\n\n");
+}
+
+static inline void generate_moves(){
+    //Where a piece is
+    int source_square;
+    //Where it is heading
+    int target_square;
+
+    //Define a piece's bitboard copy and it's attacks
+    U64 bitboard;
+    U64 attacks;
+
+    for(int piece = P; piece <=k; piece++){
+        //Get a copy of the piece bitboard
+        bitboard = bitboards[piece];
+
+        //Generate white pawns and castling moves
+        if(side == white){
+            
+        }
+
+        //Generate black pawns and castling moves
+        if(side == black){
+            
+        }
+
+        //Generate knight moves
+
+        //Generate bishop moves
+
+        //Generate rook moves
+
+        //Generate queen moves
+
+        //Generate king moves
+    }
 }
 
 
