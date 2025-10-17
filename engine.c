@@ -768,7 +768,7 @@ static inline void generate_moves(){
                             }
                         }
                     }
-                    pop_bit(get_lsb_index(bitboard));
+                    rem_bit(bitboard, source_square);
                 }
             }
         }
@@ -794,7 +794,7 @@ static inline void generate_moves(){
                             }
                         }
                     }
-                    pop_bit(get_lsb_index(bitboard));
+                    rem_bit(bitboard, source_square);
                 }
             }
         }
@@ -823,13 +823,28 @@ static inline void generate_moves(){
   1000 0000 0000 0000 0000 0000    castling flag        0x800000
 */
 
+#define encode_move(source, target, piece, promoted, capture, double, enpassant, castling) \
+(source) | (target << 6) | (piece << 12) | (promoted << 16) | (capture << 20) | (double << 21) | (enpassant << 22) | (castling << 23)
+ 
+#define get_source(move) (move & 0x3f)
+#define get_target(target) ((move & 0xfc0) >> 6)
+#define get_piece(piece) ((move & 0xf000) >> 12)
+#define get_promoted(promoted) ((move & 0xf0000) >> 16)
+#define get_capture(capture) (move & 0x100000)
+#define get_double(double) (move & 0x200000)
+#define get_enpassant(enpassant) (move & 0x400000)
+#define get_capturing(capturing) (move & 0x800000)
+
+
 int main(){
     init_piece_attack_tables();
     
     parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - ");
     print_board();
  
-    print_attacked_squares(white);
+    int move = encode_move(e2, e4, P, 0, 0, 0, 0, 0);
+    int source_square = get_source(move);
+    printf("%s", square_to_coords[source_square]);
 
 
 }
