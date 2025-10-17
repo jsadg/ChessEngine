@@ -37,6 +37,8 @@ const char *square_to_coords[] = {
 //ASCII pieces
 char ascii_pieces[12] = "PNBRQKpnbrqk";
 
+#define starting_position "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - "
+
 int char_pieces[] = {
     ['P'] = P,
     ['N'] = N,
@@ -733,7 +735,15 @@ void print_attacked_squares(int side){
     printf("    a b c d e f g h\n\n");
 }
 
-static inline void generate_moves(){
+typedef struct{
+    //Max is ~218
+    int moves[256];
+    //Number of moves
+    int count;
+} moves;
+
+static inline void generate_moves(moves *move_list){
+    move_list->count = 0;
     //Where a piece is
     int source_square;
     //Where it is heading
@@ -830,21 +840,63 @@ static inline void generate_moves(){
 #define get_target(target) ((move & 0xfc0) >> 6)
 #define get_piece(piece) ((move & 0xf000) >> 12)
 #define get_promoted(promoted) ((move & 0xf0000) >> 16)
-#define get_capture(capture) (move & 0x100000)
-#define get_double(double) (move & 0x200000)
-#define get_enpassant(enpassant) (move & 0x400000)
-#define get_capturing(capturing) (move & 0x800000)
+#define get_capture(capture) ((move & 0x100000) >> 20)
+#define get_double(double) ((move & 0x200000) >> 21)
+#define get_enpassant(enpassant) ((move & 0x400000) >> 22)
+#define get_castling(castling) ((move & 0x800000) >> 23)
 
+static inline void add_move(moves *move_list, int move){
+    move_list->moves[move_list->count] = move;
+    move_list->count++;
+}
+
+char promoted_pieces[] = {
+    [Q] = 'q',
+    [R] = 'r',
+    [B] = 'b',
+    [N] = 'n',
+    [q] = 'q',
+    [r] = 'r',
+    [b] = 'b',
+    [n] = 'n'
+};
+
+//For UCI
+void print_move(int move){
+    printf("%s%s%c\n", square_to_coords[get_source(move)], square_to_coords[get_target(move)], promoted_pieces[get_promoted(move)]);
+}
+
+void print_move_list(moves *move_list){
+    if(!move_list->count){
+        printf("No moves in move list\n");
+        return;
+    }
+
+    printf("\nmove    piece    capture    double    epassant   castling\n");
+    for(int move_count = 0; move_count < move_list->count; move_count++){
+        int move = move_list->moves[move_count];
+        printf("%s%s%c   %c        %d          %d         %d          %d\n",
+            square_to_coords[get_source(move)],
+            square_to_coords[get_target(move)],
+            promoted_pieces[get_promoted(move)],
+            ascii_pieces[get_piece(move)],
+            get_capture(move),
+            get_double(move),
+            get_enpassant(move),
+            get_castling(move));
+    }
+    printf("\n\n Total number of moves: %d\n\n", move_list->count);
+}
 
 int main(){
     init_piece_attack_tables();
     
-    parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - ");
+    parse_fen(starting_position);
     print_board();
- 
-    int move = encode_move(e2, e4, P, 0, 0, 0, 0, 0);
-    int source_square = get_source(move);
-    printf("%s", square_to_coords[source_square]);
 
+    moves move_list[1];
+    generate_moves(move_list);
+
+    print_move_list(move_list);
 
 }
