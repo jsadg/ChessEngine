@@ -152,7 +152,7 @@ static inline int count_bits(U64 bitboard){
 }
 
 //Gets the lsb location of the bitboard
-static inline int get_lsb_index(U64 bitboard) {
+static inline int get_ls1b_index(U64 bitboard) {
     if (bitboard == 0){
         return -1;
     }
@@ -459,7 +459,7 @@ U64 set_occupancy(int index, int bits_in_mask, U64 attack_mask){
     U64 occupancy = 0ULL;
 
     for(int count = 0; count < bits_in_mask; count++){
-        int square = get_lsb_index(attack_mask);
+        int square = get_ls1b_index(attack_mask);
         rem_bit(attack_mask, square);
         if(index & (1<<count)){
             occupancy |= (1ULL << square);
@@ -797,11 +797,11 @@ static inline void generate_moves(moves *move_list){
         //Get a copy of the piece bitboard
         bitboard = bitboards[piece];
         //White pawn moves
-        if(piece == P){
+        if(piece == P && side == white){
             U64 single_push = (bitboard >> 8) & (~occupancies[both]); 
             //Single pawn pushes
             while(single_push){
-                target_square = get_lsb_index(single_push);
+                target_square = get_ls1b_index(single_push);
                 source_square = target_square + 8;
                 //Pawn promotions
                 if(target_square >= a8 && target_square <= h8){
@@ -823,11 +823,11 @@ static inline void generate_moves(moves *move_list){
             }
             //Pawn attacks
             while(bitboard){
-                source_square = get_lsb_index(bitboard);
+                source_square = get_ls1b_index(bitboard);
             
                 attacks = pawn_attacks[white][source_square] & occupancies[black];
                 while(attacks){
-                    target_square = get_lsb_index(attacks);
+                    target_square = get_ls1b_index(attacks);
                     if(target_square >= a8 && target_square <= h8){
                         add_move(move_list, encode_move(source_square, target_square, P, Q, 1, 0, 0, 0));
                         add_move(move_list, encode_move(source_square, target_square, P, R, 1, 0, 0, 0));
@@ -842,7 +842,7 @@ static inline void generate_moves(moves *move_list){
                 if(enpassant != no_sq){
                     U64 enpassant_attacks = pawn_attacks[white][source_square] & (1ULL << enpassant);
                     if(enpassant_attacks){
-                        int target_enpassant = get_lsb_index(enpassant_attacks);
+                        int target_enpassant = get_ls1b_index(enpassant_attacks);
                         add_move(move_list, encode_move(source_square, target_enpassant, P, 0, 1, 0, 1, 0));
                     }
                 }
@@ -851,11 +851,11 @@ static inline void generate_moves(moves *move_list){
         }
 
         //Generate black pawn moves
-        if(piece == p){
+        if(piece == p && side == black){
             //Single pawn pushes
             U64 single_push = (bitboard << 8) & (~occupancies[both]);
             while(single_push){
-                target_square = get_lsb_index(single_push);
+                target_square = get_ls1b_index(single_push);
                 source_square = target_square - 8;
                 //Pawn promotions
                 if(target_square >= a1 && target_square <= h1){
@@ -876,11 +876,11 @@ static inline void generate_moves(moves *move_list){
                 rem_bit(single_push, target_square);
             }
             while(bitboard){
-                source_square = get_lsb_index(bitboard);
+                source_square = get_ls1b_index(bitboard);
             
                 attacks = pawn_attacks[black][source_square] & occupancies[white];
                 while(attacks){
-                    target_square = get_lsb_index(attacks);
+                    target_square = get_ls1b_index(attacks);
                     if(target_square >= a1 && target_square <= h1){
                         add_move(move_list, encode_move(source_square, target_square, p, q, 1, 0, 0, 0));
                         add_move(move_list, encode_move(source_square, target_square, P, r, 1, 0, 0, 0));
@@ -895,7 +895,7 @@ static inline void generate_moves(moves *move_list){
                 if(enpassant != no_sq){
                     U64 enpassant_attacks = pawn_attacks[black][source_square] & (1ULL << enpassant);
                     if(enpassant_attacks){
-                        int target_enpassant = get_lsb_index(enpassant_attacks);
+                        int target_enpassant = get_ls1b_index(enpassant_attacks);
                         add_move(move_list, encode_move(source_square, target_enpassant, p, 0, 1, 0, 1, 0));
                     }
                 }
@@ -903,16 +903,253 @@ static inline void generate_moves(moves *move_list){
             }
         }
 
+        if(piece == K && side == white){
+            //Kingside castling is legal
+            if(castle & wkc){
+                if(!get_bit(occupancies[both], f1) && !get_bit(occupancies[both], g1) && !is_square_attacked(f1, black) && !is_square_attacked(g1, black)){
+                    add_move(move_list, encode_move(e1, g1, K, 0, 0, 0, 0, 1));
+                }
+            }
+            //Queenside castling is legal
+            if(castle & wqc){
+                if(!get_bit(occupancies[both], d1) && !get_bit(occupancies[both], c1) && !is_square_attacked(d1, black) && !is_square_attacked(c1, black)){
+                    add_move(move_list, encode_move(e1, c1, K, 0, 0, 0, 0, 1));
+                }
+            }
+        }
 
-        //Generate knight moves
+        if(piece == k && side == black){
+            //Kingside castling is legal
+            if(castle & bkc){
+                if(!get_bit(occupancies[both], f8) && !get_bit(occupancies[both], g8) && !is_square_attacked(f8, white) && !is_square_attacked(g8, white)){
+                    add_move(move_list, encode_move(e8, g8, k, 0, 0, 0, 0, 1));
+                }
+            }
+            //Queenside castling is legal
+            if(castle & bqc){
+                if(!get_bit(occupancies[both], d8) && !get_bit(occupancies[both], c8) && !is_square_attacked(d8, white) && !is_square_attacked(c8, white)){
+                    add_move(move_list, encode_move(e8, c8, k, 0, 0, 0, 0, 1));
+                }
+            }
+        }
 
-        //Generate bishop moves
+        //Generate white knight moves
+        if(piece == N && side == white){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get knight attacks for the specific piece without landing on own
+                attacks = knight_attacks[source_square] & ~occupancies[white];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[black], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, N, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, N, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+        //Generate black knight moves
+        if(piece == n && side == black){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get knight attacks for the specific piece without landing on own
+                attacks = knight_attacks[source_square] & ~occupancies[black];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[white], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, n, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, n, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
 
-        //Generate rook moves
+        //Generate white bishop moves
+        if(piece == B && side == white){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get bishop attacks for the specific piece
+                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[black], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, B, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, B, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+        //Generate black bishop moves
+        if(piece == b && side == black){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get bishop attacks for the specific piece
+                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[white], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, b, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, b, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
 
-        //Generate queen moves
+        //Generate white rook moves
+        if(piece == R && side == white){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get rook attacks for the specific piece
+                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[black], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, R, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, R, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+        //Generate black rook moves
+        if(piece == r && side == black){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get rook attacks for the specific piece
+                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[white], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, r, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, r, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+        //Generate white queen moves
+        if(piece == Q && side == white){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get queen attacks for the specific piece
+                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[black], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, Q, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, Q, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+        //Generate black queen moves
+        if(piece == q && side == black){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get black attacks for the specific piece
+                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[white], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, q, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, q, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
 
-        //Generate king moves
+        //Generate white king moves
+        if(piece == K && side == white){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get king attacks for the specific piece without landing on own
+                attacks = king_attacks[source_square] & ~occupancies[white];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[black], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, K, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, K, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+
+        //Generate black king moves
+        if(piece == k && side == black){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                //Get king attacks for the specific piece without landing on own
+                attacks = king_attacks[source_square] & ~occupancies[black];
+                while(attacks){
+                    target_square = get_ls1b_index(attacks);
+                    //Non-capture
+                    if(!get_bit(occupancies[white], target_square)){
+                        add_move(move_list, encode_move(source_square, target_square, k, 0, 0, 0, 0, 0));
+                    }
+                    //Capture
+                    else{
+                        add_move(move_list, encode_move(source_square, target_square, k, 0, 1, 0, 0, 0));
+                    }
+                    rem_bit(attacks, target_square);
+                }
+                rem_bit(bitboard, source_square);
+            }
+        }
+
+
+
     }
 }
 
@@ -946,8 +1183,7 @@ void print_move_list(moves *move_list){
 int main(){
     init_piece_attack_tables();
     
-    parse_fen("8/8/8/8/2pP/8/8/8 w - d3 0 1");
-    print_bitboard(bitboards[P]);
+    parse_fen("8/8/8/8/8/3k4/2B5/8 b - - 0 1");
     print_board();
 
     moves move_list;
