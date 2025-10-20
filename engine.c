@@ -1180,15 +1180,32 @@ void print_move_list(moves *move_list){
     printf("\n\n Total number of moves: %d\n\n", move_list->count);
 }
 
+#define copy_board() \
+    U64 bitboards_copy[12], occupancies_copy[3]; \
+    int side_copy, enpassant_copy, castle_copy; \
+    memcpy(bitboards_copy, bitboards, 96); \
+    memcpy(occupancies_copy, occupancies, 24); \
+    side_copy = side, enpassant_copy = enpassant, castle_copy = castle; \
+
+#define take_back() \
+    memcpy(bitboards, bitboards_copy, 96); \
+    memcpy(occupancies, occupancies_copy, 24); \
+    side = side_copy, enpassant = enpassant_copy, castle = castle_copy; \
+
 int main(){
     init_piece_attack_tables();
     
     parse_fen("8/8/8/8/8/3k4/2B5/8 b - - 0 1");
     print_board();
 
-    moves move_list;
-    generate_moves(&move_list);
+    copy_board();
 
-    print_move_list(&move_list);
+    parse_fen(starting_position);
+    print_board();
+    
+    take_back();
+
+    print_board();
+
 
 }
