@@ -1,1 +1,2 @@
 Improve parse_fen function for dataset training/perft
+Add checks for q-search

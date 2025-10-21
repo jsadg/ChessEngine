@@ -781,6 +781,89 @@ char promoted_pieces[] = {
     [n] = 'n'
 };
 
+#define copy_board() \
+    U64 bitboards_copy[12], occupancies_copy[3]; \
+    int side_copy, enpassant_copy, castle_copy; \
+    memcpy(bitboards_copy, bitboards, 96); \
+    memcpy(occupancies_copy, occupancies, 24); \
+    side_copy = side, enpassant_copy = enpassant, castle_copy = castle; \
+
+#define take_back() \
+    memcpy(bitboards, bitboards_copy, 96); \
+    memcpy(occupancies, occupancies_copy, 24); \
+    side = side_copy, enpassant = enpassant_copy, castle = castle_copy; \
+
+enum{all_moves, captures};
+
+static inline int make_move(int move, int move_type){
+    //Non-Captures
+    if(move_type == all_moves){
+        //Save board state
+        copy_board();
+        //Board variables
+        int source_square = get_source(move);
+        int target_square = get_target(move);
+        int piece = get_piece(move);
+        int promoted_piece = get_promoted(move);
+        int capture = get_capture(move);
+        int double_push = get_double(move);
+        int ep = get_enpassant(move);
+        int castling = get_castling(move);
+
+        //Move piece
+        rem_bit(bitboards[piece], source_square);
+        set_bit(bitboards[piece], target_square);
+
+        if(capture){
+            int start_piece, end_piece;
+
+            if(side == white){
+                start_piece = p;
+                end_piece = k;
+            }
+            else{
+                start_piece = P;
+                end_piece = K;
+            }
+            //Loop over the opposite side's bitboards to remove the captured piece
+            for(int piece = start_piece; piece <= end_piece; piece++){
+                //If piece on target square
+                if(get_bit(bitboards[piece], target_square)){
+                    //Remove the piece
+                    rem_bit(bitboards[piece], target_square);
+                    break;
+                }
+            }
+        }
+        //Pawn promotions
+        if(promoted_piece){
+            rem_bit(bitboards[side == white ? P :p], target_square);
+            set_bit(bitboards[promoted_piece], target_square);
+        }
+
+        if(ep){
+            //Remove pawn captured by e.p.
+            (side == white) ? rem_bit(bitboards[P], target_square + 8) : rem_bit(bitboards[P], target_square - 8);
+        }
+        //Reset enpassant square after move
+        enpassant = no_sq;
+
+        //Make enpassant square available on double pawn pushes
+        if(double_push){
+            (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
+        }
+
+    }
+    //Captures
+    else if(get_capture(move)){
+        make_move(move, all_moves);
+    }
+    //Illegal Moves
+    else{
+        return 0;
+    }
+
+}
 
 static inline void generate_moves(moves *move_list){
     move_list->count = 0;
@@ -1180,32 +1263,28 @@ void print_move_list(moves *move_list){
     printf("\n\n Total number of moves: %d\n\n", move_list->count);
 }
 
-#define copy_board() \
-    U64 bitboards_copy[12], occupancies_copy[3]; \
-    int side_copy, enpassant_copy, castle_copy; \
-    memcpy(bitboards_copy, bitboards, 96); \
-    memcpy(occupancies_copy, occupancies, 24); \
-    side_copy = side, enpassant_copy = enpassant, castle_copy = castle; \
-
-#define take_back() \
-    memcpy(bitboards, bitboards_copy, 96); \
-    memcpy(occupancies, occupancies_copy, 24); \
-    side = side_copy, enpassant = enpassant_copy, castle = castle_copy; \
-
 int main(){
     init_piece_attack_tables();
-    
-    parse_fen("8/8/8/8/8/3k4/2B5/8 b - - 0 1");
-    print_board();
 
-    copy_board();
-
-    parse_fen(starting_position);
+    parse_fen("8/8/8/8/8/8/pPpPpPpP/8 w - - 0 1");
     print_board();
     
-    take_back();
+    moves move_list[1];
 
-    print_board();
+    generate_moves(move_list);
+
+    for(int count = 0; count < move_list->count; count++){
+        int move = move_list->moves[count];
+
+        copy_board();
+
+        make_move(move, all_moves);
+        print_board();
+        getchar();
+        take_back();
+        print_board();
+        getchar();
+    }
 
 
 }
