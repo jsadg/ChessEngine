@@ -807,11 +807,6 @@ const int castling_rights[64] = {
     13, 15, 15, 15, 12, 15, 15, 14
 };
 
-static inline int update_castling_rights(){
-
-}
-
-
 static inline int make_move(int move, int move_type){
     //Non-Captures
     if(move_type == all_moves){
@@ -848,19 +843,22 @@ static inline int make_move(int move, int move_type){
                 if(get_bit(bitboards[piece], target_square)){
                     //Remove the piece
                     rem_bit(bitboards[piece], target_square);
+                    rem_bit(occupancies[!side], target_square);
                     break;
                 }
             }
         }
         //Pawn promotions
         if(promoted_piece){
-            rem_bit(bitboards[side == white ? P :p], target_square);
+            rem_bit(bitboards[side == white ? P : p], source_square);
             set_bit(bitboards[promoted_piece], target_square);
         }
 
         if(ep){
             //Remove pawn captured by e.p.
-            (side == white) ? rem_bit(bitboards[P], target_square + 8) : rem_bit(bitboards[P], target_square - 8);
+            (side == white) ? rem_bit(bitboards[p], target_square + 8) : rem_bit(bitboards[P], target_square - 8);
+            (side == white) ? rem_bit(occupancies[black], target_square + 8) : rem_bit(occupancies[white], target_square - 8);
+
         }
         //Reset enpassant square after move
         enpassant = no_sq;
@@ -876,29 +874,42 @@ static inline int make_move(int move, int move_type){
                 case(g1):
                     rem_bit(bitboards[R], h1);
                     set_bit(bitboards[R], f1);
+                    rem_bit(occupancies[white], h1);
+                    set_bit(occupancies[white], f1);
                     break;
                 //white queenside
                 case(c1):
                     rem_bit(bitboards[R], a1);
                     set_bit(bitboards[R], d1);
+                    rem_bit(occupancies[white], a1);
+                    set_bit(occupancies[white], d1);
                     break;
                 //black kingside
                 case(g8):
                     rem_bit(bitboards[r], h8);
                     set_bit(bitboards[r], f8);
+                    rem_bit(occupancies[black], h8);
+                    set_bit(occupancies[black], f8);
                     break;
                 //black queenside
                 case(c8):
                     rem_bit(bitboards[r], a8);
                     set_bit(bitboards[r], d8);
+                    rem_bit(occupancies[black], a8);
+                    set_bit(occupancies[black], d8);
                     break;
             }
         }
-
         //Update castling rights
         castle &= castling_rights[source_square];
         //Handles capturing of rooks
         castle &= castling_rights[target_square];
+
+        //Handles occpancies updates for moves
+        rem_bit(occupancies[side], source_square);
+        set_bit(occupancies[side], target_square);
+
+        occupancies[both] = occupancies[white] | occupancies[black];
 
     }
     //Captures
@@ -1313,7 +1324,7 @@ void print_move_list(moves *move_list){
 int main(){
     init_piece_attack_tables();
 
-    parse_fen("r3k2r/8/8/8/8/8/8/R3K2R b KkQq - 0 1");
+    parse_fen("8/8/8/8/8/8/1p6/R7 b - - 0 1");
     print_board();
     
     moves move_list[1];
@@ -1327,6 +1338,8 @@ int main(){
 
         make_move(move, all_moves);
         print_board();
+        getchar();
+        print_bitboard(occupancies[both]);
         getchar();
         take_back();
         print_board();
