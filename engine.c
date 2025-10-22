@@ -795,6 +795,23 @@ char promoted_pieces[] = {
 
 enum{all_moves, captures};
 
+//Castling update constant array
+const int castling_rights[64] = {
+    7, 15, 15, 15, 3, 15, 15, 11,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    15, 15, 15, 15, 15, 15, 15, 15,
+    13, 15, 15, 15, 12, 15, 15, 14
+};
+
+static inline int update_castling_rights(){
+
+}
+
+
 static inline int make_move(int move, int move_type){
     //Non-Captures
     if(move_type == all_moves){
@@ -852,6 +869,36 @@ static inline int make_move(int move, int move_type){
         if(double_push){
             (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
         }
+
+        if(castling){
+            switch(target_square){
+                //white kingside
+                case(g1):
+                    rem_bit(bitboards[R], h1);
+                    set_bit(bitboards[R], f1);
+                    break;
+                //white queenside
+                case(c1):
+                    rem_bit(bitboards[R], a1);
+                    set_bit(bitboards[R], d1);
+                    break;
+                //black kingside
+                case(g8):
+                    rem_bit(bitboards[r], h8);
+                    set_bit(bitboards[r], f8);
+                    break;
+                //black queenside
+                case(c8):
+                    rem_bit(bitboards[r], a8);
+                    set_bit(bitboards[r], d8);
+                    break;
+            }
+        }
+
+        //Update castling rights
+        castle &= castling_rights[source_square];
+        //Handles capturing of rooks
+        castle &= castling_rights[target_square];
 
     }
     //Captures
@@ -1266,7 +1313,7 @@ void print_move_list(moves *move_list){
 int main(){
     init_piece_attack_tables();
 
-    parse_fen("8/8/8/8/8/8/pPpPpPpP/8 w - - 0 1");
+    parse_fen("r3k2r/8/8/8/8/8/8/R3K2R b KkQq - 0 1");
     print_board();
     
     moves move_list[1];
