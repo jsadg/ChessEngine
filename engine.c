@@ -911,6 +911,19 @@ static inline int make_move(int move, int move_type){
 
         occupancies[both] = occupancies[white] | occupancies[black];
 
+        side ^= 1;
+
+        //Check if move places king in check
+        if(is_square_attacked((side == white) ? get_ls1b_index(bitboards[k]) : get_ls1b_index(bitboards[K]), side)){
+            take_back();
+            //Illegal move
+            return 0;
+        }
+        else{
+            //Legal move
+            return 1;
+        }
+
     }
     //Captures
     else if(get_capture(move)){
@@ -1324,7 +1337,7 @@ void print_move_list(moves *move_list){
 int main(){
     init_piece_attack_tables();
 
-    parse_fen("8/8/8/8/8/8/1p6/R7 b - - 0 1");
+    parse_fen("R2r4/8/3K4/8/3k4/8/1p6/R7 w - - 0 1");
     print_board();
     
     moves move_list[1];
@@ -1336,10 +1349,10 @@ int main(){
 
         copy_board();
 
-        make_move(move, all_moves);
+        if(!make_move(move, all_moves)){
+            continue;
+        }
         print_board();
-        getchar();
-        print_bitboard(occupancies[both]);
         getchar();
         take_back();
         print_board();
