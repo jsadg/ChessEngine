@@ -2,6 +2,10 @@
 #include "board.h"
 #include "attacks.h"
 #include "movegen.h"
+#include <stdio.h>
+
+BoardState board_stack[MAX_PLY];
+int ply = 0;
 
 char promoted_pieces[] = {
     [Q] = 'q',
@@ -15,18 +19,20 @@ char promoted_pieces[] = {
 };
 
 const int castling_rights[64] = {
-    7, 15, 15, 15, 3, 15, 15, 11,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    15, 15, 15, 15, 15, 15, 15, 15,
-    13, 15, 15, 15, 12, 15, 15, 14
+    7,15,15,15,3,15,15,11,
+    15,15,15,15,15,15,15,15,
+    15,15,15,15,15,15,15,15,
+    15,15,15,15,15,15,15,15,
+    15,15,15,15,15,15,15,15,
+    15,15,15,15,15,15,15,15,
+    15,15,15,15,15,15,15,15,
+    13,15,15,15,12,15,15,14
 };
+
 
 int make_move(int move, int move_type){
     // Non-Captures
+
     if(move_type == all_moves){
         // Save board state
         copy_board();
@@ -39,10 +45,14 @@ int make_move(int move, int move_type){
         int double_push = get_double(move);
         int ep = get_enpassant(move);
         int castling = get_castling(move);
-
         // Move piece
         rem_bit(bitboards[piece], source_square);
-        set_bit(bitboards[piece], target_square);
+        if(promoted_piece){
+            set_bit(bitboards[promoted_piece], target_square);
+        }
+        else{
+            set_bit(bitboards[piece], target_square);
+        }
 
         if(capture){
             int start_piece, end_piece;
@@ -66,12 +76,6 @@ int make_move(int move, int move_type){
                 }
             }
         }
-        // Pawn promotions
-        if(promoted_piece){
-            rem_bit(bitboards[side == white ? P : p], source_square);
-            set_bit(bitboards[promoted_piece], target_square);
-        }
-
         if(ep){
             // Remove pawn captured by e.p.
             (side == white) ? rem_bit(bitboards[p], target_square + 8) : rem_bit(bitboards[P], target_square - 8);
@@ -231,13 +235,13 @@ void generate_moves(moves *move_list){
                 source_square = target_square - 8;
                 // Pawn promotions
                 if(target_square >= a1 && target_square <= h1){
-                    add_move(move_list, encode_move(source_square, target_square, p, q, 1, 0, 0, 0));
-                    add_move(move_list, encode_move(source_square, target_square, p, r, 1, 0, 0, 0));
-                    add_move(move_list, encode_move(source_square, target_square, p, b, 1, 0, 0, 0));
-                    add_move(move_list, encode_move(source_square, target_square, p, n, 1, 0, 0, 0));
+                    add_move(move_list, encode_move(source_square, target_square, p, q, 0, 0, 0, 0));
+                    add_move(move_list, encode_move(source_square, target_square, p, r, 0, 0, 0, 0));
+                    add_move(move_list, encode_move(source_square, target_square, p, b, 0, 0, 0, 0));
+                    add_move(move_list, encode_move(source_square, target_square, p, n, 0, 0, 0, 0));
                 }
                 else{
-                    add_move(move_list, encode_move(source_square, target_square, p, 0, 1, 0, 0, 0));
+                    add_move(move_list, encode_move(source_square, target_square, p, 0, 0, 0, 0, 0));
                     // Double pawn moves
                     if (source_square >= a7 && source_square <= h7) {
                         int double_push = source_square + 16;
@@ -255,9 +259,9 @@ void generate_moves(moves *move_list){
                     // Attacks with promotion
                     if(target_square >= a1 && target_square <= h1){
                         add_move(move_list, encode_move(source_square, target_square, p, q, 1, 0, 0, 0));
-                        add_move(move_list, encode_move(source_square, target_square, P, r, 1, 0, 0, 0));
-                        add_move(move_list, encode_move(source_square, target_square, P, b, 1, 0, 0, 0));
-                        add_move(move_list, encode_move(source_square, target_square, P, n, 1, 0, 0, 0));
+                        add_move(move_list, encode_move(source_square, target_square, p, r, 1, 0, 0, 0));
+                        add_move(move_list, encode_move(source_square, target_square, p, b, 1, 0, 0, 0));
+                        add_move(move_list, encode_move(source_square, target_square, p, n, 1, 0, 0, 0));
                     }
                     else{
                         add_move(move_list, encode_move(source_square, target_square, p, 0, 1, 0, 0, 0));

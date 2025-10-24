@@ -8,28 +8,10 @@
 int main(){
     init_piece_attack_tables();
 
-    parse_fen("1k6/2RQ3N/1n2NP2/2pp2pn/q7/4r3/5Pb1/1K6 w - - 0 1");
+    parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KkQq - ");
     print_board();
-    
-    moves move_list[1];
-
-    generate_moves(move_list);
-
-    for(int count = 0; count < move_list->count; count++){
-        int move = move_list->moves[count];
-
-        copy_board();
-
-        if(!make_move(move, all_moves)){
-            continue;
-        }
-        
-        print_board();
-        getchar();
-        take_back();
-        print_board();
-        getchar();
-    }
-
-
+    long long current_time = current_time_in_ms();
+    U64 test = perft(6);
+    printf("Nodes: %llu\n", test);
+    printf("Time taken: %llu ms\n", current_time_in_ms() - current_time);
 }

@@ -25,8 +25,8 @@ static inline int get_ls1b_index(U64 bitboard){
 }
 
 // Bitboard macros for manipulation
-#define set_bit(bitboard, square) ((bitboard) |= (1ULL << (square)))
-#define get_bit(bitboard, square) ((bitboard) & (1ULL << (square)))
-#define rem_bit(bitboard, square) ((bitboard) &= ~(1ULL << (square)))
+#define set_bit(bitboard, square) ((bitboard) |= (1ULL << (U64)(square)))
+#define get_bit(bitboard, square) ((bitboard) & (1ULL << (U64)(square)))
+#define rem_bit(bitboard, square) ((bitboard) &= ~(1ULL << (U64)(square)))
 
 #endif

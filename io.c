@@ -164,3 +164,44 @@ void print_move_list(moves *move_list){
     }
     printf("\n\n Total number of moves: %d\n\n", move_list->count);
 }
+
+
+U64 perft(int depth){
+    moves move_list[256];
+    U64 nodes = 0;
+    if(depth == 0){
+        return 1ULL;
+    }
+    generate_moves(move_list);
+    // Iterate through all moves
+    for(int count = 0; count < move_list->count; count++){
+        int move = move_list->moves[count];
+        // If not legal disregard
+        if(!make_move(move, all_moves)){
+            continue;
+        }
+        // Otherwise add to nodes
+        nodes += perft(depth -1);
+        take_back();
+    }
+    return nodes;
+}
+
+void perft_divide(int depth) {
+    moves move_list[1];
+    generate_moves(move_list);
+    U64 nodes, total = 0;
+
+    for (int i = 0; i < move_list->count; i++) {
+        int move = move_list->moves[i];
+        if (!make_move(move, all_moves))
+            continue;
+        nodes = perft(depth - 1);
+        take_back();
+        print_move(move);
+        printf("%llu\n", nodes);
+        total += nodes;
+    }
+    printf("Total: %llu\n", total);
+}
+

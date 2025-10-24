@@ -5,10 +5,10 @@
 #include "bitboard.h"
 
 
-// Rook magic numbers sourced from Pradyumna Kannan
+// Rook magic numbers sourced from ChessProgramming
 extern const U64 rook_magics[64];
 
-// Bishop magic numbers sourced from Pradyumna Kannan
+// Bishop magic numbers sourced from ChessProgramming
 extern const U64 bishop_magics[64];
 
 // Rook and bishop relevant occupancy bit counts

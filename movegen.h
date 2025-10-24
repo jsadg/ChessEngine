@@ -14,6 +14,34 @@ typedef struct{
     int count;
 } moves;
 
+// Board state structure
+typedef struct {
+    U64 bitboards[12];
+    U64 occupancies[3];
+    int side;
+    int enpassant;
+    int castle;
+} BoardState;
+
+#define MAX_PLY 256
+extern BoardState board_stack[MAX_PLY];
+extern int ply;
+
+#define copy_board() \
+    board_stack[ply].side = side; \
+    board_stack[ply].enpassant = enpassant; \
+    board_stack[ply].castle = castle; \
+    memcpy(board_stack[ply].bitboards, bitboards, sizeof(bitboards)); \
+    memcpy(board_stack[ply].occupancies, occupancies, sizeof(occupancies)); \
+    ply++;
+
+#define take_back() \
+    ply--; \
+    side = board_stack[ply].side; \
+    enpassant = board_stack[ply].enpassant; \
+    castle = board_stack[ply].castle; \
+    memcpy(bitboards, board_stack[ply].bitboards, sizeof(bitboards)); \
+    memcpy(occupancies, board_stack[ply].occupancies, sizeof(occupancies)); \
 
 
 /*                  Encoding macros
@@ -55,23 +83,6 @@ static inline void add_move(moves *move_list, int move) {
     move_list->moves[move_list->count] = move;
     move_list->count++;
 }
-
-// Copy/take back macros for board state
-#define copy_board() \
-    U64 bitboards_copy[12], occupancies_copy[3]; \
-    int side_copy, enpassant_copy, castle_copy; \
-    memcpy(bitboards_copy, bitboards, sizeof(bitboards)); \
-    memcpy(occupancies_copy, occupancies, sizeof(occupancies)); \
-    side_copy = side; \
-    enpassant_copy = enpassant; \
-    castle_copy = castle;
-
-#define take_back() \
-    memcpy(bitboards, bitboards_copy, sizeof(bitboards)); \
-    memcpy(occupancies, occupancies_copy, sizeof(occupancies)); \
-    side = side_copy; \
-    enpassant = enpassant_copy; \
-    castle = castle_copy;
 
 
 // Returns 1 if the given square is attacked by the given side

@@ -5,7 +5,7 @@
 #include "bitboard.h"
 #include "board.h"
 #include "movegen.h"
-
+#include <sys/time.h>
 
 // Print the given bitboard out in row column format
 void print_bitboard(U64 bitboard);
@@ -24,5 +24,18 @@ void print_move(int move);
 
 // Print all moves in a move list
 void print_move_list(moves *move_list);
+
+// Returns current time in for perft analysis
+static inline long long current_time_in_ms() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (long long)tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+// Performance analysis for movegen
+U64 perft(int depth);
+
+void perft_divide(int depth);
+
 
 #endif

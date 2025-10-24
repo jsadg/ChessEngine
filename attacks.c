@@ -31,7 +31,7 @@ U64 mask_pawn_attacks(int side, int square){
 }
 
 void init_pawn_attack_table(){
-    for(int square=0; square<64; square++){
+    for(int square = 0; square < 64; square++){
         pawn_attacks[white][square] = mask_pawn_attacks(white, square);
         pawn_attacks[black][square] = mask_pawn_attacks(black, square);
     }
