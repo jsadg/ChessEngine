@@ -188,6 +188,7 @@ U64 perft(int depth){
 }
 
 void perft_divide(int depth) {
+    long long current_time = current_time_in_ms();
     moves move_list[1];
     generate_moves(move_list);
     U64 nodes, total = 0;
@@ -202,6 +203,7 @@ void perft_divide(int depth) {
         printf("%llu\n", nodes);
         total += nodes;
     }
-    printf("Total: %llu\n", total);
+    printf("Total Nodes: %llu\n", total);
+    printf("Time taken: %llu ms\n", current_time_in_ms() - current_time);
 }
 

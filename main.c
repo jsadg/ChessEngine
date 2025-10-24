@@ -10,8 +10,6 @@ int main(){
 
     parse_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KkQq - ");
     print_board();
-    long long current_time = current_time_in_ms();
-    U64 test = perft(6);
-    printf("Nodes: %llu\n", test);
-    printf("Time taken: %llu ms\n", current_time_in_ms() - current_time);
+    perft_divide(6);
+
 }
