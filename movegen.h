@@ -23,10 +23,12 @@ typedef struct {
     int castle;
 } BoardState;
 
+// Max number of board states
 #define MAX_PLY 256
 extern BoardState board_stack[MAX_PLY];
 extern int ply;
 
+// Copy the given board
 #define copy_board() \
     board_stack[ply].side = side; \
     board_stack[ply].enpassant = enpassant; \
@@ -35,6 +37,7 @@ extern int ply;
     memcpy(board_stack[ply].occupancies, occupancies, sizeof(occupancies)); \
     ply++;
 
+// Put back the copied board
 #define take_back() \
     ply--; \
     side = board_stack[ply].side; \

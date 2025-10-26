@@ -203,7 +203,48 @@ void perft_divide(int depth) {
         printf("%llu\n", nodes);
         total += nodes;
     }
+    printf("Depth: %d\n", depth);
     printf("Total Nodes: %llu\n", total);
-    printf("Time taken: %llu ms\n", current_time_in_ms() - current_time);
+    printf("Time taken: %llu ms\n", current_time_in_ms() - current_time);   
+}
+
+int parse_move(char * move_string){
+    moves move_list[1];
+    generate_moves(move_list);
+
+    // Get source and target from the move
+    int source_square = (move_string[0] - 'a') + (8 - (move_string[1] - '0')) * 8;
+    int target_square = (move_string[2] - 'a') + (8 - (move_string[3] - '0')) * 8;
+
+    // Find move in move list
+    for(int move_count = 0; move_count < move_list->count; move_count++){
+        int move = move_list->moves[move_count];
+        int promoted_piece = get_promoted(move);
+        if(source_square == get_source(move) && target_square == get_target(move)){
+            if(promoted_piece){
+                // Check which promoted piece
+                if(move_string[4] == 'q' && (promoted_piece == Q || promoted_piece == q)){
+                    return move;
+                }
+                else if(move_string[4] == 'r' && (promoted_piece == R || promoted_piece == r)){
+                    return move;
+                }
+                else if(move_string[4] == 'b' && (promoted_piece == B || promoted_piece == b)){
+                    return move;
+                }
+                else if(move_string[4] == 'n' && (promoted_piece == N || promoted_piece == n)){
+                    return move;
+                }
+                // Check other promotions
+                continue;
+            }  
+            // Legal move
+            return move;
+        }
+    }
+    // Illegal move
+    return 0;
+
+
 }
 

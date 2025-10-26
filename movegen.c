@@ -53,10 +53,9 @@ int make_move(int move, int move_type){
         else{
             set_bit(bitboards[piece], target_square);
         }
-
         if(capture){
+            // Take opponent's piece to loop over
             int start_piece, end_piece;
-
             if(side == white){
                 start_piece = p;
                 end_piece = k;
@@ -65,7 +64,7 @@ int make_move(int move, int move_type){
                 start_piece = P;
                 end_piece = K;
             }
-            // Loop over the opposite side's bitboards to remove the captured piece
+            // Loop over the opposite side's piece bitboards to remove the captured piece
             for(int piece = start_piece; piece <= end_piece; piece++){
                 // If piece on target square
                 if(get_bit(bitboards[piece], target_square)){
@@ -199,7 +198,6 @@ void generate_moves(moves *move_list){
             // Pawn attacks
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-            
                 attacks = pawn_attacks[white][source_square] & occupancies[black];
                 while(attacks){
                     target_square = get_ls1b_index(attacks);

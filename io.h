@@ -35,7 +35,10 @@ static inline long long current_time_in_ms() {
 // Performance analysis for movegen
 U64 perft(int depth);
 
+// Give each move of the first perft and its perft
 void perft_divide(int depth);
 
+// Parse user input
+int parse_move(char * move_string);
 
 #endif
