@@ -6,6 +6,8 @@
 #include "board.h"
 #include "movegen.h"
 #include <sys/time.h>
+#include <stdlib.h>
+#include "search.h"
 
 // Print the given bitboard out in row column format
 void print_bitboard(U64 bitboard);
@@ -38,7 +40,16 @@ U64 perft(int depth);
 // Give each move of the first perft and its perft
 void perft_divide(int depth);
 
-// Parse user input
+// Parse move from a string
 int parse_move(char * move_string);
+
+// Parse UCI "position" command
+void parse_position(char *command);
+
+// Parse UCI "go" command
+void parse_go(char *command);
+
+// Main UCI loop
+void uci_loop();
 
 #endif

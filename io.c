@@ -244,7 +244,121 @@ int parse_move(char * move_string){
     }
     // Illegal move
     return 0;
-
-
 }
 
+void parse_position(char *command){
+    // Next token location (after position command)
+    command += 9;
+    char *current_char = command;
+
+    // Parse UCI "startpos"
+    if(strncmp(command, "startpos", 8) == 0){
+        parse_fen(starting_position);
+    }
+    // Parse "fen" command
+    else{
+        current_char = strstr(command, "fen");
+        // If null fen then startpos
+        if(current_char == NULL){
+            parse_fen(starting_position);
+        }
+        else{
+            // Shift pointer to fen string
+            current_char += 4;
+            parse_fen(current_char);
+        }
+    }
+    // Parse moves after given position
+    current_char = strstr(command, "moves");
+    if(current_char != NULL){
+        // Shift pointer to start of moves
+        current_char += 6;
+        while(*current_char){
+            // Parse next move
+            int move = parse_move(current_char);
+            // If illegal move break
+            if(move == 0){
+                break;
+            }
+            make_move(move, all_moves);
+
+            // Move on to the next move
+            while(*current_char && *current_char != ' '){
+                current_char++;
+            }
+            current_char++;
+        }
+    }
+}
+
+void parse_go(char *command){
+    int depth = -1;
+    char *current_depth = NULL;
+    if((current_depth = strstr(command, "depth"))){
+        // Get depth value from command
+        depth = atoi(current_depth + 6);
+    }
+    printf("%d\n",depth);
+
+    //search_position();
+    printf("%s\n", search_position(depth));
+}
+
+void uci_loop(){
+    // Reset STDIN and STDOUT buffers
+    setbuf(stdin, NULL);
+    setbuf(stdout, NULL);
+    
+    // GUI input buffer
+    char input[2000];
+
+    // Engine info
+    printf("id name engine\n");
+    printf("id author jsadg\n");
+    printf("uciok\n");
+
+    // Main loop
+    while(1){
+        // Reset GUI input
+        memset(input, 0, sizeof(input));
+        // Flush output
+        fflush(stdout);
+        // Get GUI input
+        if(!fgets(input, 2000, stdin)){
+            continue;
+        }
+        // Make sure input is available
+        else if(input[0] == '\n'){
+            continue;
+        }
+
+        // Parse UCI "isready" command
+        else if(strncmp(input, "isready", 7) == 0){
+            printf("readyok\n");
+            continue;
+        }
+        // Parse UCI "position" command
+        else if(strncmp(input, "position", 8) == 0){
+            parse_position(input);
+        }
+        // Parse UCI "ucinewgame" command
+        else if(strncmp(input, "ucinewgame", 11) == 0){
+            parse_position("position startpos");
+        }
+        // Parse UCI "go" command
+        else if(strncmp(input, "go", 2) == 0){
+            parse_go(input);
+        }
+        // Parse UCI "quit" command
+        else if(strncmp(input, "quit", 4) == 0){
+            break;
+        }
+        // Parse UCI "uci" command
+        else if(strncmp(input, "uci", 3) == 0){
+             // Engine info
+            printf("id name engine\n");
+            printf("id author jsadg\n");
+            printf("uciok\n");
+        }
+    }
+}

@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2
 
 # Source and object files
-SRCS = main.c attacks.c movegen.c board.c bitboard.c io.c magics.c
+SRCS = main.c attacks.c search.c movegen.c board.c bitboard.c io.c magics.c
 OBJDIR = build
 OBJS = $(SRCS:%.c=$(OBJDIR)/%.o)
 
