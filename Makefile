@@ -1,5 +1,5 @@
 # Compiler and flags
-CC = gcc
+CC = x86_64-w64-mingw32-gcc
 CFLAGS = -Wall -Wextra -O2
 
 # Source and object files

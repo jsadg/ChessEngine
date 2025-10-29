@@ -7,7 +7,7 @@
 
 int main(){
     init_piece_attack_tables();
-
+    init_psqt();
     uci_loop();
 
     return 0;
