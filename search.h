@@ -16,8 +16,14 @@ extern const int rook_score[64];
 extern const int queen_score[64];
 extern const int king_score[64];
 
+extern int piece_square_total[12][64];
+
+// Convert evals and positional scores to piece_square_total for lookup
+void init_psqt();
+
+
 // Used to mirror positional eval
-const int mirror_score[128];
+extern const int mirror_score[128];
 
 // Search the current position at the given depth
 char* search_position(int depth);

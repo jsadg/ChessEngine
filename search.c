@@ -97,9 +97,9 @@ const int mirror_score[128] = {
 int piece_square_total[12][64];
 
 void init_psqt(){
-    for(int piece = P; piece <= k; piece++) {
+    for(int piece = P; piece <= k; piece++){
+        int pos_bonus;
         for(int square = 0; square < 64; square++){
-            int pos_bonus = 0;
             switch(piece){
                 case P:
                     pos_bonus = pawn_score[square];
@@ -147,7 +147,7 @@ void init_psqt(){
 int evaluate(){
     int score = 0;
     U64 bitboard;
-    int piece, square;
+    int square;
     // Loop through pieces and get eval from each
     for(int piece = P; piece <= k; piece++){
         bitboard = bitboards[piece];

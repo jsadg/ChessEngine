@@ -28,6 +28,8 @@ $(OBJDIR):
 # Clean up
 clean:
 	rm -rf $(OBJDIR) $(TARGET)
+	rm -f chess
+	rm -f chess.exe
 
 # Run program
 run: $(TARGET)
