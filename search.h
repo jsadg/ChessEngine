@@ -4,6 +4,7 @@
 #include "bitboard.h"
 #include "board.h"
 #include "movegen.h"
+#include "io.h"
 
 // Table of material scores
 extern const int material_score[12];
@@ -21,17 +22,14 @@ extern int piece_square_total[12][64];
 // Convert evals and positional scores to piece_square_total for lookup
 void init_psqt();
 
-
-// Used to mirror positional eval
-extern const int mirror_score[128];
-
 // Search the current position at the given depth
-char* search_position(int depth);
+void search_position(int depth);
 
 // Return the eval of the current position
 int evaluate();
 
-
+// Alpha beta loop to evaluate at a depth
+int negamax(int alpha, int beta, int depth);
 
 
 #endif

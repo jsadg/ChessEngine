@@ -23,28 +23,27 @@ typedef struct {
     int castle;
 } BoardState;
 
-// Max number of board states
-#define MAX_PLY 256
-extern BoardState board_stack[MAX_PLY];
-extern int ply;
+// Board state stack
+extern BoardState board_stack[1024];
+extern int pos_num;
 
 // Copy the given board
 #define copy_board() \
-    board_stack[ply].side = side; \
-    board_stack[ply].enpassant = enpassant; \
-    board_stack[ply].castle = castle; \
-    memcpy(board_stack[ply].bitboards, bitboards, sizeof(bitboards)); \
-    memcpy(board_stack[ply].occupancies, occupancies, sizeof(occupancies)); \
-    ply++;
+    board_stack[pos_num].side = side; \
+    board_stack[pos_num].enpassant = enpassant; \
+    board_stack[pos_num].castle = castle; \
+    memcpy(board_stack[pos_num].bitboards, bitboards, sizeof(bitboards)); \
+    memcpy(board_stack[pos_num].occupancies, occupancies, sizeof(occupancies)); \
+    pos_num++;
 
 // Put back the copied board
 #define take_back() \
-    ply--; \
-    side = board_stack[ply].side; \
-    enpassant = board_stack[ply].enpassant; \
-    castle = board_stack[ply].castle; \
-    memcpy(bitboards, board_stack[ply].bitboards, sizeof(bitboards)); \
-    memcpy(occupancies, board_stack[ply].occupancies, sizeof(occupancies)); \
+    pos_num--; \
+    side = board_stack[pos_num].side; \
+    enpassant = board_stack[pos_num].enpassant; \
+    castle = board_stack[pos_num].castle; \
+    memcpy(bitboards, board_stack[pos_num].bitboards, sizeof(bitboards)); \
+    memcpy(occupancies, board_stack[pos_num].occupancies, sizeof(occupancies)); \
 
 
 /*                  Encoding macros

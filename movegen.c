@@ -4,8 +4,8 @@
 #include "movegen.h"
 #include <stdio.h>
 
-BoardState board_stack[MAX_PLY];
-int ply = 0;
+BoardState board_stack[1024];
+int pos_num = 0;
 
 char promoted_pieces[] = {
     [Q] = 'q',

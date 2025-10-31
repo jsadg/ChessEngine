@@ -301,7 +301,7 @@ void parse_go(char *command){
     printf("%d\n",depth);
 
     //search_position();
-    printf("%s\n", search_position(depth));
+    search_position(depth);
 }
 
 void uci_loop(){

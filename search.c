@@ -20,10 +20,10 @@ const int pawn_score[64] = {
     80,  80,  80,  80,  80,  80,  80,  80,
     40,  40,  40,  40,  40,  40,  40,  40,
     20,  20,  20,  30,  30,  20,  20,  20,
-    15,   5,  15,  30,  30,  15,   5,  15,
-    10,   0,  10,  20,  20,   5,   0,  10,
+    15,   5,  15,  35,  35,  15,   5,  15,
+    10,   0,  10,  30,  30,   5,   0,  10,
      5,   0,   0,   5,   5,  -5,   5,   5,
-     5,   5,   5,  -9,  -9,   5,   5,   5,
+     5,   5,   5, -10, -10,   5,   5,   5,
      0,   0,   0,   0,   0,   0,   0,   0
 };
 
@@ -31,12 +31,12 @@ const int pawn_score[64] = {
 const int knight_score[64] = {
    -20, -10, -10, -10, -10, -10, -10, -20,
    -10,  -5,   0,   0,   0,   0,  -5, -10,
-   -10,   0,  20,  40,  40,  20,   0, -10,
-   -10,   0,  30,  40,  40,  30,   0, -10,
-   -10,   0,  30,  40,  40,  30,   0, -10,
+   -10,   0,  20,  30,  30,  20,   0, -10,
+   -10,   0,  25,  30,  30,  25,   0, -10,
+   -10,   0,  25,  30,  30,  25,   0, -10,
    -10,   0,  20,   5,   5,  20,   0, -10,
    -10,  -5,   0,  10,  10,   0,  -5, -10,
-   -20, -15, -10, -10, -10, -10, -15, -20
+   -20, -12, -10, -10, -10, -10, -12, -20
 };
 // Corners bad, own side good, motivation to develop
 const int bishop_score[64] = {
@@ -86,19 +86,11 @@ const int king_score[64] = {
      5,  25,  30, -10, -10,  -5,  40,   5 
 };
 
-const int mirror_score[128] = {
-    a1, b1, c1, d1, e1, f1, g1, h1,
-    a2, b2, c2, d2, e2, f2, g2, h2,
-    a3, b3, c3, d3, e3, f3, g3, h3,
-    a4, b4, c4, d4, e4, f4, g4, h4,
-    a5, b5, c5, d5, e5, f5, g5, h5,
-    a6, b6, c6, d6, e6, f6, g6, h6,
-    a7, b7, c7, d7, e7, f7, g7, h7,
-    a8, b8, c8, d8, e8, f8, g8, h8,
-};
-
-
 int piece_square_total[12][64];
+
+// Used to flip for black
+static inline int mirror_square(int square) { return square ^ 56; }
+
 
 void init_psqt(){
     for(int piece = P; piece <= k; piece++){
@@ -124,22 +116,22 @@ void init_psqt(){
                     pos_bonus = king_score[square];
                     break;
                 case p:
-                    pos_bonus = -pawn_score[mirror_score[square]];
+                    pos_bonus = -pawn_score[mirror_square(square)];
                     break;
                 case n:
-                    pos_bonus = -knight_score[mirror_score[square]];
+                    pos_bonus = -knight_score[mirror_square(square)];
                     break;
                 case b:
-                    pos_bonus = -bishop_score[mirror_score[square]];
+                    pos_bonus = -bishop_score[mirror_square(square)];
                     break;
                 case r:
-                    pos_bonus = -rook_score[mirror_score[square]];
+                    pos_bonus = -rook_score[mirror_square(square)];
                     break;
                 case q:
-                    pos_bonus = -queen_score[mirror_score[square]];
+                    pos_bonus = -queen_score[mirror_square(square)];
                     break;
                 case k:
-                    pos_bonus = -king_score[mirror_score[square]];
+                    pos_bonus = -king_score[mirror_square(square)];
                     break;
             }
             piece_square_total[piece][square] = material_score[piece] + pos_bonus;
@@ -165,8 +157,67 @@ int evaluate(){
     return (side == white) ? score : -score;
 }
 
+// Best move in the position
+int best_move;
 
-char* search_position(int depth){
-    
-    return "e2e4";
+// Half move
+int ply = 0;
+
+int negamax(int alpha, int beta, int depth){
+    if(depth == 0){
+        return evaluate();
+    }
+    int in_check = is_square_attacked((side == white) ? get_ls1b_index(bitboards[K]) : get_ls1b_index(bitboards[k]), side ^ 1);
+    int best_sofar;
+    int old_alpha = alpha;
+
+    // Generate moves for move list
+    moves move_list[1];
+    generate_moves(move_list);
+    for(int count = 0; count < move_list->count; count++){
+        copy_board();
+        ply++;
+        // If move is illegal take it back
+        if(make_move(move_list->moves[count], all_moves) == 0){
+            ply--;
+            take_back();
+            continue;
+        }
+
+        // Recursively call negamax with negative parameters
+        int score = -negamax(-beta, -alpha, depth-1);
+        ply--;
+        take_back();
+        
+        // Beta cutoff
+        if(score >= beta){
+            // Node fails high
+            return beta;
+        }
+
+        // Better move
+        if(score > alpha){
+            alpha = score;
+            if(ply == 0){
+                best_sofar = move_list->moves[count];
+            }
+        }
+    }
+
+    if(old_alpha != alpha){
+        best_move = best_sofar;
+    }
+    // Move fails low
+    return alpha;
 }
+
+void search_position(int depth){
+    // Find best move given a position
+    ply = 0;
+    best_move = 0;
+    int score = negamax(-50000, 50000, depth);
+    printf("Score: %d\n", score);
+    printf("bestmove:");
+    print_move(best_move);
+}
+
