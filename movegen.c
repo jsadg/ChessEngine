@@ -30,128 +30,117 @@ const int castling_rights[64] = {
 };
 
 
-int make_move(int move, int move_type){
-    // Non-Captures
-
-    if(move_type == all_moves){
-        // Save board state
-        copy_board();
-        // Board variables
-        int source_square = get_source(move);
-        int target_square = get_target(move);
-        int piece = get_piece(move);
-        int promoted_piece = get_promoted(move);
-        int capture = get_capture(move);
-        int double_push = get_double(move);
-        int ep = get_enpassant(move);
-        int castling = get_castling(move);
-        // Move piece
-        rem_bit(bitboards[piece], source_square);
-        if(promoted_piece){
-            set_bit(bitboards[promoted_piece], target_square);
-        }
-        else{
-            set_bit(bitboards[piece], target_square);
-        }
-        if(capture){
-            // Take opponent's piece to loop over
-            int start_piece, end_piece;
-            if(side == white){
-                start_piece = p;
-                end_piece = k;
-            }
-            else{
-                start_piece = P;
-                end_piece = K;
-            }
-            // Loop over the opposite side's piece bitboards to remove the captured piece
-            for(int piece = start_piece; piece <= end_piece; piece++){
-                // If piece on target square
-                if(get_bit(bitboards[piece], target_square)){
-                    // Remove the piece
-                    rem_bit(bitboards[piece], target_square);
-                    rem_bit(occupancies[!side], target_square);
-                    break;
-                }
-            }
-        }
-        if(ep){
-            // Remove pawn captured by e.p.
-            (side == white) ? rem_bit(bitboards[p], target_square + 8) : rem_bit(bitboards[P], target_square - 8);
-            (side == white) ? rem_bit(occupancies[black], target_square + 8) : rem_bit(occupancies[white], target_square - 8);
-
-        }
-        // Reset enpassant square after move
-        enpassant = no_sq;
-
-        // Make enpassant square available on double pawn pushes
-        if(double_push){
-            (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
-        }
-
-        if(castling){
-            switch(target_square){
-                // White kingside
-                case(g1):
-                    rem_bit(bitboards[R], h1);
-                    set_bit(bitboards[R], f1);
-                    rem_bit(occupancies[white], h1);
-                    set_bit(occupancies[white], f1);
-                    break;
-                // White queenside
-                case(c1):
-                    rem_bit(bitboards[R], a1);
-                    set_bit(bitboards[R], d1);
-                    rem_bit(occupancies[white], a1);
-                    set_bit(occupancies[white], d1);
-                    break;
-                // Black kingside
-                case(g8):
-                    rem_bit(bitboards[r], h8);
-                    set_bit(bitboards[r], f8);
-                    rem_bit(occupancies[black], h8);
-                    set_bit(occupancies[black], f8);
-                    break;
-                // Black queenside
-                case(c8):
-                    rem_bit(bitboards[r], a8);
-                    set_bit(bitboards[r], d8);
-                    rem_bit(occupancies[black], a8);
-                    set_bit(occupancies[black], d8);
-                    break;
-            }
-        }
-        // Update castling rights
-        castle &= castling_rights[source_square];
-        // Handles capturing of rooks
-        castle &= castling_rights[target_square];
-
-        // Handles occpancies updates for moves
-        rem_bit(occupancies[side], source_square);
-        set_bit(occupancies[side], target_square);
-
-        occupancies[both] = occupancies[white] | occupancies[black];
-
-        // Flip side after move to check for illegal moves
-        side ^= 1;
-
-        // Check if move places king in check
-        if(is_square_attacked((side == white) ? get_ls1b_index(bitboards[k]) : get_ls1b_index(bitboards[K]), side)){
-            take_back();
-            // Illegal move
-            return 0;
-        }
-        else{
-            // Legal move
-            return 1;
-        }
-    }
-    // Captures
-    else if(get_capture(move)){
-        return make_move(move, all_moves);
+int make_move(int move){
+    // Save board state
+    copy_board();
+    // Board variables
+    int source_square = get_source(move);
+    int target_square = get_target(move);
+    int piece = get_piece(move);
+    int promoted_piece = get_promoted(move);
+    int capture = get_capture(move);
+    int double_push = get_double(move);
+    int ep = get_enpassant(move);
+    int castling = get_castling(move);
+    // Move piece
+    rem_bit(bitboards[piece], source_square);
+    if(promoted_piece){
+        set_bit(bitboards[promoted_piece], target_square);
     }
     else{
+        set_bit(bitboards[piece], target_square);
+    }
+    if(capture){
+        // Take opponent's piece to loop over
+        int start_piece, end_piece;
+        if(side == white){
+            start_piece = p;
+            end_piece = k;
+        }
+        else{
+            start_piece = P;
+            end_piece = K;
+        }
+        // Loop over the opposite side's piece bitboards to remove the captured piece
+        for(int piece = start_piece; piece <= end_piece; piece++){
+            // If piece on target square
+            if(get_bit(bitboards[piece], target_square)){
+                // Remove the piece
+                rem_bit(bitboards[piece], target_square);
+                rem_bit(occupancies[!side], target_square);
+                break;
+            }
+        }
+    }
+    if(ep){
+        // Remove pawn captured by e.p.
+        (side == white) ? rem_bit(bitboards[p], target_square + 8) : rem_bit(bitboards[P], target_square - 8);
+        (side == white) ? rem_bit(occupancies[black], target_square + 8) : rem_bit(occupancies[white], target_square - 8);
+
+    }
+    // Reset enpassant square after move
+    enpassant = no_sq;
+
+    // Make enpassant square available on double pawn pushes
+    if(double_push){
+        (side == white) ? (enpassant = target_square + 8) : (enpassant = target_square - 8);
+    }
+
+    if(castling){
+        switch(target_square){
+            // White kingside
+            case(g1):
+                rem_bit(bitboards[R], h1);
+                set_bit(bitboards[R], f1);
+                rem_bit(occupancies[white], h1);
+                set_bit(occupancies[white], f1);
+                break;
+            // White queenside
+            case(c1):
+                rem_bit(bitboards[R], a1);
+                set_bit(bitboards[R], d1);
+                rem_bit(occupancies[white], a1);
+                set_bit(occupancies[white], d1);
+                break;
+            // Black kingside
+            case(g8):
+                rem_bit(bitboards[r], h8);
+                set_bit(bitboards[r], f8);
+                rem_bit(occupancies[black], h8);
+                set_bit(occupancies[black], f8);
+                break;
+            // Black queenside
+            case(c8):
+                rem_bit(bitboards[r], a8);
+                set_bit(bitboards[r], d8);
+                rem_bit(occupancies[black], a8);
+                set_bit(occupancies[black], d8);
+                break;
+        }
+    }
+    // Update castling rights
+    castle &= castling_rights[source_square];
+    // Handles capturing of rooks
+    castle &= castling_rights[target_square];
+
+    // Handles occpancies updates for moves
+    rem_bit(occupancies[side], source_square);
+    set_bit(occupancies[side], target_square);
+
+    occupancies[both] = occupancies[white] | occupancies[black];
+
+    // Flip side after move to check for illegal moves
+    side ^= 1;
+
+    // Check if move places king in check
+    if(is_square_attacked((side == white) ? get_ls1b_index(bitboards[k]) : get_ls1b_index(bitboards[K]), side)){
+        take_back();
+        // Illegal move
         return 0;
+    }
+    else{
+        // Legal move
+        return 1;
     }
 }
 
@@ -288,7 +277,7 @@ void generate_moves(moves *move_list){
             }
             // White queenside castling is legal
             if(castle & wqc){
-                if(!get_bit(occupancies[both], d1) && !get_bit(occupancies[both], c1) && !is_square_attacked(d1, black) && !is_square_attacked(c1, black)){
+                if(!get_bit(occupancies[both], d1) && !get_bit(occupancies[both], c1) && !get_bit(occupancies[both], b1) && !is_square_attacked(d1, black) && !is_square_attacked(c1, black)){
                     add_move(move_list, encode_move(e1, c1, K, 0, 0, 0, 0, 1));
                 }
             }
@@ -303,7 +292,7 @@ void generate_moves(moves *move_list){
             }
             // Black queenside castling is legal
             if(castle & bqc){
-                if(!get_bit(occupancies[both], d8) && !get_bit(occupancies[both], c8) && !is_square_attacked(d8, white) && !is_square_attacked(c8, white)){
+                if(!get_bit(occupancies[both], d8) && !get_bit(occupancies[both], c8) && !get_bit(occupancies[both], b8) && !is_square_attacked(d8, white) && !is_square_attacked(c8, white)){
                     add_move(move_list, encode_move(e8, c8, k, 0, 0, 0, 0, 1));
                 }
             }
@@ -524,4 +513,15 @@ void generate_moves(moves *move_list){
             }
         }
     }
+}
+
+void prune_to_quiescence(moves *move_list){
+    int count = 0;
+    for(int i = 0; i < move_list->count; i++){
+        int m = move_list->moves[i];
+        if(get_capture(m) || get_promoted(m)){ 
+            move_list->moves[count++] = m;
+        }
+    }
+    move_list->count = count;
 }

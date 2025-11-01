@@ -28,6 +28,9 @@ void search_position(int depth);
 // Return the eval of the current position
 int evaluate();
 
+// Search capture related moves to avoid horizon effect
+int quiescence(int alpha, int beta);
+
 // Alpha beta loop to evaluate at a depth
 int negamax(int alpha, int beta, int depth);
 

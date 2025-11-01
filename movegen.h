@@ -5,6 +5,7 @@
 #include "board.h"
 #include "attacks.h"
 #include <string.h>
+#include <stdlib.h>
 
 // Movelist structure
 typedef struct{
@@ -28,13 +29,13 @@ extern BoardState board_stack[1024];
 extern int pos_num;
 
 // Copy the given board
-#define copy_board() \
-    board_stack[pos_num].side = side; \
-    board_stack[pos_num].enpassant = enpassant; \
-    board_stack[pos_num].castle = castle; \
-    memcpy(board_stack[pos_num].bitboards, bitboards, sizeof(bitboards)); \
-    memcpy(board_stack[pos_num].occupancies, occupancies, sizeof(occupancies)); \
-    pos_num++;
+#define copy_board()                                                                   \
+        board_stack[pos_num].side = side;                                       \
+        board_stack[pos_num].enpassant = enpassant;                             \
+        board_stack[pos_num].castle = castle;                                   \
+        memcpy(board_stack[pos_num].bitboards, bitboards, sizeof(bitboards));   \
+        memcpy(board_stack[pos_num].occupancies, occupancies, sizeof(occupancies));\
+        pos_num++;                                                              \
 
 // Put back the copied board
 #define take_back() \
@@ -122,9 +123,13 @@ static inline int is_square_attacked(int square, int side){
 }
 
 // Attempts to make a move; returns 1 if legal, 0 if illegal
-int make_move(int move, int move_type);
+int make_move(int move);
 
 // Generates all possible moves for the current position
 void generate_moves(moves *move_list);
+
+// Prunes a given move list to only captures/promotions
+void prune_to_quiescence(moves *move_list);
+
 
 #endif

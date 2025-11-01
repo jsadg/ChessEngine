@@ -9,11 +9,14 @@
 
 int main(){
     init_piece_attack_tables();
-    init_psqt();
-    parse_fen("4k3/Q7/4K3/8/8/8/8/8 w - - ");
-    print_board();
-    search_position(6);
-    
-    return 0;
+    init_psqt(); 
 
+    uci_loop();
+    /*
+    parse_fen(starting_position);
+    print_board();
+    int d = evaluate();
+    printf("Eval: %d\n", d);
+    search_position(5);
+    return 0; */
 }

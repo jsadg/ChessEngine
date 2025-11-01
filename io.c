@@ -140,7 +140,7 @@ void print_attacked_squares(int side){
 }
 
 void print_move(int move){
-    printf("%s%s%c\n", square_to_coords[get_source(move)], square_to_coords[get_target(move)], promoted_pieces[get_promoted(move)]);
+    printf("%s%s%c", square_to_coords[get_source(move)], square_to_coords[get_target(move)], promoted_pieces[get_promoted(move)]);
 }
 
 void print_move_list(moves *move_list){
@@ -177,7 +177,7 @@ U64 perft(int depth){
     for(int count = 0; count < move_list->count; count++){
         int move = move_list->moves[count];
         // If not legal disregard
-        if(!make_move(move, all_moves)){
+        if(!make_move(move)){
             continue;
         }
         // Otherwise add to nodes
@@ -195,12 +195,12 @@ void perft_divide(int depth) {
 
     for (int i = 0; i < move_list->count; i++) {
         int move = move_list->moves[i];
-        if (!make_move(move, all_moves))
+        if (!make_move(move))
             continue;
         nodes = perft(depth - 1);
         take_back();
         print_move(move);
-        printf("%llu\n", nodes);
+        printf("\n%llu\n", nodes);
         total += nodes;
     }
     printf("Depth: %d\n", depth);
@@ -280,7 +280,7 @@ void parse_position(char *command){
             if(move == 0){
                 break;
             }
-            make_move(move, all_moves);
+            make_move(move);
 
             // Move on to the next move
             while(*current_char && *current_char != ' '){
@@ -298,9 +298,8 @@ void parse_go(char *command){
         // Get depth value from command
         depth = atoi(current_depth + 6);
     }
-    printf("%d\n",depth);
+    printf("Depth: %d\n",depth);
 
-    //search_position();
     search_position(depth);
 }
 

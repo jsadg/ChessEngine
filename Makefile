@@ -1,6 +1,12 @@
 # Compiler and flags
+
+# Windows .exe file
 CC = x86_64-w64-mingw32-gcc
-CFLAGS = -Wall -Wextra -O2
+
+# Linux elf file
+#CC = gcc
+
+CFLAGS = -g -Wall -Wextra -O2
 
 # Source and object files
 SRCS = main.c attacks.c search.c movegen.c board.c bitboard.c io.c magics.c
@@ -8,7 +14,7 @@ OBJDIR = build
 OBJS = $(SRCS:%.c=$(OBJDIR)/%.o)
 
 # Output executable
-TARGET = chess
+TARGET = chess.exe
 
 # Default rule
 all: $(TARGET)
