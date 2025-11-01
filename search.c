@@ -168,7 +168,8 @@ int negamax(int alpha, int beta, int depth){
         return evaluate();
     }
     int in_check = is_square_attacked((side == white) ? get_ls1b_index(bitboards[K]) : get_ls1b_index(bitboards[k]), side ^ 1);
-    int best_sofar;
+    int legal_moves = 0;
+    int best_sofar = 0;
     int old_alpha = alpha;
 
     // Generate moves for move list
@@ -183,7 +184,7 @@ int negamax(int alpha, int beta, int depth){
             take_back();
             continue;
         }
-
+        legal_moves++;
         // Recursively call negamax with negative parameters
         int score = -negamax(-beta, -alpha, depth-1);
         ply--;
@@ -203,6 +204,15 @@ int negamax(int alpha, int beta, int depth){
             }
         }
     }
+    // Detect checkmate
+    if(legal_moves == 0){
+        if(in_check){
+            return -49000 + ply;
+        }
+        else{ // Stalemate
+            return 0;
+        }
+    }
 
     if(old_alpha != alpha){
         best_move = best_sofar;
@@ -217,7 +227,8 @@ void search_position(int depth){
     best_move = 0;
     int score = negamax(-50000, 50000, depth);
     printf("Score: %d\n", score);
-    printf("bestmove:");
+    printf("bestmove ");
     print_move(best_move);
+    printf("\n");
 }
 
