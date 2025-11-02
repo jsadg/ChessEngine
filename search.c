@@ -19,9 +19,9 @@ const int material_score[12] = {
 const int pawn_score[64] = {
     80,  80,  80,  80,  80,  80,  80,  80,
     40,  40,  40,  40,  40,  40,  40,  40,
-    20,  20,  20,  30,  30,  20,  20,  20,
+    20,  20,  20,  37,  37,  20,  20,  20,
     15,   5,  15,  35,  35,  15,   5,  15,
-    10,   0,  10,  30,  30,   5,   0,  10,
+    10,   0,  10,  32,  32,   5,   0,  10,
      5,   0,   0,   5,   5,  -5,   5,   5,
      5,   5,   5, -10, -10,   5,   5,   5,
      0,   0,   0,   0,   0,   0,   0,   0
@@ -213,6 +213,7 @@ int negamax(int alpha, int beta, int depth){
     if(depth == 0){
         return quiescence(alpha, beta);
     }
+    // Used for checkmate detection
     int in_check = is_square_attacked((side == white) ? get_ls1b_index(bitboards[K]) : get_ls1b_index(bitboards[k]), side ^ 1);
     int legal_moves = 0;
     int best_sofar = 0;
@@ -243,6 +244,7 @@ int negamax(int alpha, int beta, int depth){
         // Better move
         if(score > alpha){
             alpha = score;
+            // Move is a root
             if(ply == 0){
                 best_sofar = move_list.moves[count];
             }
@@ -253,11 +255,12 @@ int negamax(int alpha, int beta, int depth){
         if(in_check){
             return -49000 + ply;
         }
-        else{ // Stalemate
+        // Stalemate
+        else{
             return 0;
         }
     }
-
+    // If change in alpha then best_move changes
     if(old_alpha != alpha){
         best_move = best_sofar;
     }
