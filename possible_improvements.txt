@@ -1,2 +1,4 @@
 Improve parse_fen function for dataset training/perft
 Add checks for q-search
+Add mobility for eval (calculate number of squares each piece sees at like 1-2 points each? Maybe different for each piece)
+Add pawn structure for eval (individual checks to prevent isolated pawns and doubled pawns)

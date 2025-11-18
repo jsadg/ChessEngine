@@ -6,10 +6,10 @@ CC = x86_64-w64-mingw32-gcc
 # Linux elf file
 #CC = gcc
 
-CFLAGS = -g -Wall -Wextra -O2
+CFLAGS = -g -Wall -Wextra -O2 -flto -march=native
 
 # Source and object files
-SRCS = main.c attacks.c search.c movegen.c board.c bitboard.c io.c magics.c
+SRCS = main.c attacks.c search.c movegen.c board.c bitboard.c io.c magics.c eval.c
 OBJDIR = build
 OBJS = $(SRCS:%.c=$(OBJDIR)/%.o)
 
