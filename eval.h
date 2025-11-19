@@ -4,6 +4,7 @@
 #include "bitboard.h"
 #include "board.h"
 #include "math.h"
+#include "attacks.h"
 
 // Table of material scores
 extern const int material_score[12];
@@ -23,6 +24,9 @@ void init_psqt();
 
 // Calculates pawn structure penalties for the position
 int calc_pawn_structure();
+
+// Calculates the mobility bonus for each piece in the position
+int calc_piece_mobility();
 
 // Return the eval of the current position
 int evaluate();

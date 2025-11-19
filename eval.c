@@ -207,10 +207,116 @@ int calc_pawn_structure(){
     int score = 0;
 
     // Reverse of score since these are penalties    
-    score -= (white_doubled*10) + (white_islands * white_islands * 2) + (white_isolated * 13);
-    score += (black_doubled*10) + (black_islands * black_islands * 2) + (black_isolated * 13);
+    score -= (white_doubled*10) + (white_islands * white_islands * 2) + (white_isolated * 14);
+    score += (black_doubled*10) + (black_islands * black_islands * 2) + (black_isolated * 14);
     return score;
 }
+
+
+int calc_piece_mobility(){
+    int source_square;
+    U64 bitboard;
+    U64 attacks;
+    int mobility = 0;
+    for(int piece = P; piece <= k; piece++){
+        // Get a copy of the piece bitboard
+        bitboard = bitboards[piece];
+        // Pawns and king moves should not be counted for
+        if(piece == P || piece == p || piece == K || piece == k){
+            continue;
+        }
+        // White knight move counting
+        if(piece == N){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get knight attacks without landing on own piece
+                attacks = knight_attacks[source_square] & ~occupancies[white];
+                mobility += count_bits(attacks)*10;
+                rem_bit(bitboard, source_square);
+            }
+        }
+        // Black knight move counting
+        if(piece == n){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get knight attacks without landing on own piece
+                attacks = knight_attacks[source_square] & ~occupancies[black];
+                mobility -= count_bits(attacks)*10;
+                rem_bit(bitboard, source_square);
+            }
+        }
+
+        // White bishop move generation
+        if(piece == B){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get bishop attacks without landing on own piece
+                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                // Increased value for bishop mobiliity
+                mobility += count_bits(attacks)*15;
+                rem_bit(bitboard, source_square);
+            }
+        }
+        // Black bishop move counting
+        if(piece == b){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get bishop attacks without landing on own piece
+                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                // Increased value for bishop mobiliity
+                mobility -= count_bits(attacks)*15;
+                rem_bit(bitboard, source_square);
+            }
+        }
+
+        // White rook move counting
+        if(piece == R){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get rook attacks without landing on own piece
+                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                // Less value for rook mobility
+                mobility += count_bits(attacks)*5;
+                rem_bit(bitboard, source_square);
+            }
+        }
+        // Black rook move counting
+        if(piece == r){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get rook attacks without landing on own piece
+                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                // Less value for rook mobility
+                mobility -= count_bits(attacks)*5;
+                rem_bit(bitboard, source_square);
+            }
+        }
+        // White queen move counting
+        if(piece == Q){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get queen attacks without landing on own piece
+                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                // Even less value for queen mobility
+                mobility += count_bits(attacks)*2;
+                rem_bit(bitboard, source_square);
+            }
+        }
+        // Black queen move counting
+        if(piece == q){
+            while(bitboard){
+                source_square = get_ls1b_index(bitboard);
+                // Get queen attacks without landing on own piece
+                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                // Even less value for queen mobility
+                mobility -= count_bits(attacks)*2;
+                rem_bit(bitboard, source_square);
+            }
+        }
+    }
+    return mobility/10;
+}
+
 
 int evaluate(){
     int score = 0;
@@ -229,6 +335,7 @@ int evaluate(){
     }
     // Add pawn structure calculation
     score += calc_pawn_structure();
+    score += calc_piece_mobility();
 
     return (side == white) ? score : -score;
 }
