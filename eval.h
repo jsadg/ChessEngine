@@ -3,6 +3,7 @@
 
 #include "bitboard.h"
 #include "board.h"
+#include "math.h"
 
 // Table of material scores
 extern const int material_score[12];
@@ -19,6 +20,9 @@ extern int piece_square_total[12][64];
 
 // Convert evals and positional scores to piece_square_total for lookup
 void init_psqt();
+
+// Calculates pawn structure penalties for the position
+int calc_pawn_structure();
 
 // Return the eval of the current position
 int evaluate();

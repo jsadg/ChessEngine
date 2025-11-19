@@ -139,6 +139,78 @@ void init_psqt(){
     }
 }
 
+int calc_pawn_structure(){
+    // Get file of all white pawns
+    int white_pawn_array[8] = {0};
+    U64 bitboard = bitboards[P];
+    int square = 0;
+
+    // Calculate isolated pawns
+    U64 left = (bitboard << 1) & not_a_file;
+    U64 right = (bitboard >> 1) & not_h_file;
+    int white_isolated = count_bits(bitboard & ~(left | right));
+
+    while(bitboard){
+        square = get_ls1b_index(bitboard);
+        white_pawn_array[square % 8]++;
+        rem_bit(bitboard, square);
+    }
+    int white_doubled = 0;
+    // Calculate number of doubled pawns
+    for(int i = 0; i < 8; i++){
+        if(white_pawn_array[i] >= 2){
+            white_doubled += (white_pawn_array[i]-1);
+        }
+    }
+    int white_islands = 0;
+    // Calculate pawn islands
+    for(int i = 0; i < 8; i++){
+        if(white_pawn_array[i] != 0){
+            white_islands++;
+            while(i < 8 && white_pawn_array[i] != 0){
+                i++;
+            }
+        }
+    }
+
+    int black_pawn_array[8] = {0};
+    bitboard = bitboards[p];
+
+    // Calculate isolated pawns
+    left = (bitboard << 1) & not_a_file;
+    right = (bitboard >> 1) & not_h_file;
+    int black_isolated = count_bits(bitboard & ~(left | right));
+
+    while(bitboard){
+        square = get_ls1b_index(bitboard);
+        black_pawn_array[square % 8]++;
+        rem_bit(bitboard, square);
+    }
+    int black_doubled = 0;
+    // Calculate number of doubled pawns
+    for(int i = 0; i < 8; i++){
+        if(black_pawn_array[i] >= 2){
+            black_doubled += (black_pawn_array[i]-1);
+        }
+    }
+    int black_islands = 0;
+    // Calculate pawn islands
+    for(int i = 0; i < 8; i++){
+        if(black_pawn_array[i] != 0){
+            black_islands++;
+            while(i < 8 && black_pawn_array[i] != 0){
+                i++;
+            }
+        }
+    }
+
+    int score = 0;
+
+    // Reverse of score since these are penalties    
+    score -= (white_doubled*10) + (white_islands * white_islands * 2) + (white_isolated * 13);
+    score += (black_doubled*10) + (black_islands * black_islands * 2) + (black_isolated * 13);
+    return score;
+}
 
 int evaluate(){
     int score = 0;
@@ -151,8 +223,12 @@ int evaluate(){
             square = get_ls1b_index(bitboard);
             // Piece weights
             score += piece_square_total[piece][square];
+
             rem_bit(bitboard, square);
         }
     }
+    // Add pawn structure calculation
+    score += calc_pawn_structure();
+
     return (side == white) ? score : -score;
 }
