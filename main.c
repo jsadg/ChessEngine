@@ -9,7 +9,8 @@
 
 int main(){
     init_piece_attack_tables();
-    init_psqt(); 
+    init_middlegame_psqt(); 
+    init_endgame_psqt();
 
     uci_loop();
 

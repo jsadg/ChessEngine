@@ -15,15 +15,27 @@ const int material_score[12] = {
     -10000  // Black king
 };
 
-// Space/center gaining moves good, promotion good, king safety good
+// Space/center gaining moves good, promotion good, king safety good, overextend bad
 const int pawn_score[64] = {
+    70,  70,  70,  70,  70,  70,  70,  70,
+    30,  30,  30,  30,  30,  30,  30,  30,
+    20,  20,  20,  40,  40,  20,  20,  20,
+    17,  15,  15,  40,  40,  15,  15,  17,
+    15,   0,  20,  35,  35,   5,   0,  15,
+     5,   0,  15,  10,  10,  -5,   5,   7,
+     5,   5,   5, -14, -14,   5,   5,   5,
+     0,   0,   0,   0,   0,   0,   0,   0
+};
+
+// Push em' baby, outside pawns better
+const int pawn_endgame_score[64] = {
     80,  80,  80,  80,  80,  80,  80,  80,
-    40,  40,  40,  45,  45,  40,  40,  40,
-    20,  20,  20,  39,  39,  20,  20,  20,
-    15,  15,  15,  37,  37,  15,  15,  15,
-    10,   0,  10,  35,  35,   5,   0,  10,
-     5,   0,   0,  10,  10,  -5,   5,   5,
-     5,   5,   5, -10, -10,   5,   5,   5,
+    65,  63,  60,  60,  60,  60,  63,  65,
+    45,  43,  40,  40,  40,  40,  43,  45,
+    25,  23,  20,  20,  20,  20,  23,  25,
+    15,  13,  10,  10,  10,  10,  13,  15,
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0
 };
 
@@ -31,12 +43,12 @@ const int pawn_score[64] = {
 const int knight_score[64] = {
    -20, -10, -10, -10, -10, -10, -10, -20,
    -10,  -5,   0,   0,   0,   0,  -5, -10,
-   -10,   0,  22,  30,  30,  22,   0, -10,
-   -10,   0,  20,  25,  25,  20,   0, -10,
-   -10,   0,  20,  25,  25,  20,   0, -10,
-   -10,   0,  20,   5,   5,  20,   0, -10,
+   -10,   0,  22,  27,  27,  20,   0, -10,
+   -10,   0,  20,  23,  23,  20,   0, -10,
+   -10,   0,  20,  23,  23,  20,   0, -10,
+   -10,   0,  15,   5,   5,  20,   0, -10,
    -10,  -5,   0,  10,  10,   0,  -5, -10,
-   -20, -12, -10, -10, -10, -10, -12, -20
+   -20, -10, -10, -10, -10, -10, -10, -20
 };
 // Corners bad, own side good, motivation to develop
 const int bishop_score[64] = {
@@ -47,7 +59,7 @@ const int bishop_score[64] = {
     10,   0,  20,   0,   0,  20,   0,  10,
      0,  10,   0,  20,  20,   0,  10,   0,
      5,  20,   0,  20,  20,   0,  20,   5,
-   -10,   0,  -5,   0,   0,  -5,   0,  -10
+   -10,   0,  -8,   0,   0,  -8,   0,  -10
 };
 
 // Central files good, 7th and 8th ranks good
@@ -59,7 +71,7 @@ const int rook_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
-    -5,   0,  18,  25,  25,  18,   0,   0
+    -5,   0,  14,  25,  25,  14,   0,   0
 };
 
 // Home area ok, center ok, main diagonal ok
@@ -74,6 +86,18 @@ const int queen_score[64] = {
      0,   0,   0,  15,   0,   0,   0,   0
 };
 
+// Centralized is best
+const int queen_endgame_score[64] = {
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,  15,  15,  15,  15,   0,   0,
+     0,   0,  15,  30,  30,  15,   0,   0,
+     0,   0,  15,  30,  30,  15,   0,   0,
+     0,   0,  15,  15,  15,  15,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,
+     0,   0,   0,   0,   0,   0,   0,   0,
+};
+
 // Everywhere except castled bad
 const int king_score[64] = {
    -20, -20, -20, -20, -20, -20, -20, -20,
@@ -83,16 +107,31 @@ const int king_score[64] = {
    -20, -20, -20, -20, -20, -20, -20, -20,
    -20, -20, -20, -20, -20, -20, -20, -20,
      0,   0, -15, -15, -15, -15,   0,   0,
-     5,  25,  30, -10, -10,  -5,  40,   5 
+     5,  25,  30, -10, -10,  -5,  50,   5 
 };
 
-int piece_square_total[12][64];
+// Active king
+const int king_endgame_score[64] = {
+     0,   0,   0,   0,   0,   0,   0,   0,
+     5,   0,   0,   0,   0,   0,   0,   5,
+     5,  20,  25,  25,  25,  25,  20,   5,
+     5,  15,  20,  22,  22,  20,  15,   5,
+     5,  10,  15,  15,  15,  15,  10,   5,
+     0,  10,  10,  10,  10,  10,  10,   0,
+     0,   5,   5,   5,   5,   5,   5,   0,
+   -10, -10, -10, -10, -10, -10, -10, -10,
+};
+
+
+int middlegame_piece_square_total[12][64];
+int endgame_piece_square_total[12][64];
+
 
 // Used to flip for black
 static inline int mirror_square(int square) { return square ^ 56; }
 
 
-void init_psqt(){
+void init_middlegame_psqt(){
     for(int piece = P; piece <= k; piece++){
         int pos_bonus;
         for(int square = 0; square < 64; square++){
@@ -134,7 +173,54 @@ void init_psqt(){
                     pos_bonus = -king_score[mirror_square(square)];
                     break;
             }
-            piece_square_total[piece][square] = material_score[piece] + pos_bonus;
+            middlegame_piece_square_total[piece][square] = material_score[piece] + pos_bonus;
+        }
+    }
+}
+
+void init_endgame_psqt(){
+    for(int piece = P; piece <= k; piece++){
+        int pos_bonus;
+        for(int square = 0; square < 64; square++){
+            switch(piece){
+                case P:
+                    pos_bonus = pawn_endgame_score[square];
+                    break;
+                case N:
+                    pos_bonus = knight_score[square];
+                    break;
+                case B:
+                    pos_bonus = bishop_score[square];
+                    break;
+                case R:
+                    pos_bonus = rook_score[square];
+                    break;
+                case Q:
+                    pos_bonus = queen_endgame_score[square];
+                    break;
+                case K:
+                    pos_bonus = king_endgame_score[square];
+                    break;
+                case p:
+                    pos_bonus = -pawn_endgame_score[mirror_square(square)];
+                    break;
+                case n:
+                    pos_bonus = -knight_score[mirror_square(square)];
+                    break;
+                case b:
+                    pos_bonus = -bishop_score[mirror_square(square)];
+                    break;
+                case r:
+                    pos_bonus = -rook_score[mirror_square(square)];
+                    break;
+                case q:
+                    pos_bonus = -queen_endgame_score[mirror_square(square)];
+                    break;
+                case k:
+                    pos_bonus = -king_endgame_score[mirror_square(square)];
+                    break;
+            }
+            endgame_piece_square_total[piece][square] = material_score[piece] + pos_bonus;
         }
     }
 }
@@ -231,7 +317,7 @@ int calc_piece_mobility(){
                 source_square = get_ls1b_index(bitboard);
                 // Get knight attacks
                 attacks = knight_attacks[source_square];
-                mobility += count_bits(attacks)*10;
+                mobility += count_bits(attacks)*8;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -240,7 +326,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 attacks = knight_attacks[source_square];
-                mobility -= count_bits(attacks)*10;
+                mobility -= count_bits(attacks)*8;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -252,7 +338,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility += count_bits(attacks)*12;
+                mobility += count_bits(attacks)*11;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -263,7 +349,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility -= count_bits(attacks)*12;
+                mobility -= count_bits(attacks)*11;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -317,6 +403,7 @@ int calc_piece_mobility(){
 }
 
 
+
 int evaluate(){
     int score = 0;
     U64 bitboard;
@@ -327,13 +414,19 @@ int evaluate(){
         while(bitboard){
             square = get_ls1b_index(bitboard);
             // Piece weights
-            score += piece_square_total[piece][square];
-
+            if(count_bits(occupancies[both]) > 12){
+                score += middlegame_piece_square_total[piece][square];
+            }
+            else{
+                score += endgame_piece_square_total[piece][square];
+            }
             rem_bit(bitboard, square);
         }
     }
-    // Add pawn structure calculation
+    // Add pawn structure penalties
     score += calc_pawn_structure();
+
+    // Add piece mobility bonuses
     score += calc_piece_mobility();
 
     return (side == white) ? score : -score;

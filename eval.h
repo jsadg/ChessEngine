@@ -17,10 +17,22 @@ extern const int rook_score[64];
 extern const int queen_score[64];
 extern const int king_score[64];
 
-extern int piece_square_total[12][64];
+// Updated positional scores for endgames
+extern const int pawn_endgame_score[64];
+extern const int queen_endgame_score[64];
+extern const int king_endgame_score[64];
 
-// Convert evals and positional scores to piece_square_total for lookup
-void init_psqt();
+
+extern int middlegame_piece_square_total[12][64];
+
+extern int endgame_piece_square_total[12][64];
+
+
+// Convert evals and positional scores to piece_square_total for middlegame
+void init_middlegame_psqt();
+
+// Convert evals and positional scores to piece_square_total for endgame
+void init_endgame_psqt();
 
 // Calculates pawn structure penalties for the position
 int calc_pawn_structure();
