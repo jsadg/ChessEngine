@@ -18,11 +18,11 @@ const int material_score[12] = {
 // Space/center gaining moves good, promotion good, king safety good
 const int pawn_score[64] = {
     80,  80,  80,  80,  80,  80,  80,  80,
-    40,  40,  40,  40,  40,  40,  40,  40,
-    20,  20,  20,  37,  37,  20,  20,  20,
-    15,   5,  15,  35,  35,  15,   5,  15,
-    10,   0,  10,  32,  32,   5,   0,  10,
-     5,   0,   0,   5,   5,  -5,   5,   5,
+    40,  40,  40,  45,  45,  40,  40,  40,
+    20,  20,  20,  39,  39,  20,  20,  20,
+    15,  15,  15,  37,  37,  15,  15,  15,
+    10,   0,  10,  35,  35,   5,   0,  10,
+     5,   0,   0,  10,  10,  -5,   5,   5,
      5,   5,   5, -10, -10,   5,   5,   5,
      0,   0,   0,   0,   0,   0,   0,   0
 };
@@ -31,9 +31,9 @@ const int pawn_score[64] = {
 const int knight_score[64] = {
    -20, -10, -10, -10, -10, -10, -10, -20,
    -10,  -5,   0,   0,   0,   0,  -5, -10,
-   -10,   0,  20,  30,  30,  20,   0, -10,
-   -10,   0,  25,  30,  30,  25,   0, -10,
-   -10,   0,  25,  30,  30,  25,   0, -10,
+   -10,   0,  22,  30,  30,  22,   0, -10,
+   -10,   0,  20,  25,  25,  20,   0, -10,
+   -10,   0,  20,  25,  25,  20,   0, -10,
    -10,   0,  20,   5,   5,  20,   0, -10,
    -10,  -5,   0,  10,  10,   0,  -5, -10,
    -20, -12, -10, -10, -10, -10, -12, -20
@@ -43,23 +43,23 @@ const int bishop_score[64] = {
    -10,   0,   0,   0,   0,   0,   0,  -10,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
-     0,  15,   0,   0,   0,   0,  15,   0,
-     0,   0,  20,   0,   0,  20,   0,   0,
-     0,  20,   0,  20,  20,   0,  15,   0,
+     0,  20,   0,   0,   0,   0,  20,   0,
+    10,   0,  20,   0,   0,  20,   0,  10,
+     0,  10,   0,  20,  20,   0,  10,   0,
      5,  20,   0,  20,  20,   0,  20,   5,
    -10,   0,  -5,   0,   0,  -5,   0,  -10
 };
 
 // Central files good, 7th and 8th ranks good
 const int rook_score[64] = {
-    30,  30,  30,  30,  30,  30,  30,  30,
-    50,  50,  50,  50,  50,  50,  50,  50,
+    28,  28,  28,  28,  28,  28,  28,  28,
+    35,  35,  35,  35,  35,  35,  35,  35,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
-    -5,   0,  20,  30,  30,  20,   0,   0
+    -5,   0,  18,  25,  25,  18,   0,   0
 };
 
 // Home area ok, center ok, main diagonal ok
@@ -229,8 +229,8 @@ int calc_piece_mobility(){
         if(piece == N){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get knight attacks without landing on own piece
-                attacks = knight_attacks[source_square] & ~occupancies[white];
+                // Get knight attacks
+                attacks = knight_attacks[source_square];
                 mobility += count_bits(attacks)*10;
                 rem_bit(bitboard, source_square);
             }
@@ -239,8 +239,7 @@ int calc_piece_mobility(){
         if(piece == n){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get knight attacks without landing on own piece
-                attacks = knight_attacks[source_square] & ~occupancies[black];
+                attacks = knight_attacks[source_square];
                 mobility -= count_bits(attacks)*10;
                 rem_bit(bitboard, source_square);
             }
@@ -250,10 +249,10 @@ int calc_piece_mobility(){
         if(piece == B){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get bishop attacks without landing on own piece
-                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                // Get bishop attacks
+                attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility += count_bits(attacks)*15;
+                mobility += count_bits(attacks)*12;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -261,10 +260,10 @@ int calc_piece_mobility(){
         if(piece == b){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get bishop attacks without landing on own piece
-                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                // Get bishop attacks
+                attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility -= count_bits(attacks)*15;
+                mobility -= count_bits(attacks)*12;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -273,8 +272,8 @@ int calc_piece_mobility(){
         if(piece == R){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get rook attacks without landing on own piece
-                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                // Get rook attacks
+                attacks = get_rook_attacks(source_square, occupancies[both]);
                 // Less value for rook mobility
                 mobility += count_bits(attacks)*5;
                 rem_bit(bitboard, source_square);
@@ -284,8 +283,8 @@ int calc_piece_mobility(){
         if(piece == r){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get rook attacks without landing on own piece
-                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                // Get rook attacks
+                attacks = get_rook_attacks(source_square, occupancies[both]);
                 // Less value for rook mobility
                 mobility -= count_bits(attacks)*5;
                 rem_bit(bitboard, source_square);
@@ -295,8 +294,8 @@ int calc_piece_mobility(){
         if(piece == Q){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get queen attacks without landing on own piece
-                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[white];
+                // Get queen attacks
+                attacks = get_queen_attacks(source_square, occupancies[both]);
                 // Even less value for queen mobility
                 mobility += count_bits(attacks)*2;
                 rem_bit(bitboard, source_square);
@@ -306,8 +305,8 @@ int calc_piece_mobility(){
         if(piece == q){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                // Get queen attacks without landing on own piece
-                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[black];
+                // Get queen attacks
+                attacks = get_queen_attacks(source_square, occupancies[both]);
                 // Even less value for queen mobility
                 mobility -= count_bits(attacks)*2;
                 rem_bit(bitboard, source_square);
