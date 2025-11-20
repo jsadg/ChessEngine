@@ -419,16 +419,16 @@ int calc_piece_bonuses(){
 
 // Arrays containing important pawn shield squares and assocaited penalty
 static const int wks_squares[] = {f2, g2, h2};
-static const int wks_penalties[] = {10, 25, 10};
+static const int wks_penalties[] = {12, 30, 12};
 
 static const int wqs_squares[] = {a2, b2, c2};
-static const int wqs_penalties[] = {10, 25, 20};
+static const int wqs_penalties[] = {12, 30, 22};
 
 static const int bks_squares[] = {f7, g7, h7};
-static const int bks_penalties[] = {10, 25, 10};
+static const int bks_penalties[] = {12, 30, 12};
 
 static const int bqs_squares[] = {a7, b7, c7};
-static const int bqs_penalties[] = {10, 25, 20};
+static const int bqs_penalties[] = {12, 30, 22};
 
 int calc_king_safety(){
     // If endgame position king safety bonus not needed
@@ -442,7 +442,7 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[P] & ((1ULL << wks_squares[i]) | (1ULL << (wks_squares[i] - 8))))
-                score += 5;
+                score += 8;
             else
                 score -= wks_penalties[i];
         }
@@ -453,7 +453,7 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[P] & ((1ULL << wqs_squares[i]) | (1ULL << (wqs_squares[i] - 8))))
-                score += 5;
+                score += 8;
             else
                 score -= wqs_penalties[i];
         }
@@ -464,9 +464,9 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[p] & ((1ULL << bks_squares[i]) | (1ULL << (bks_squares[i] + 8))))
-                score += 5;
+                score -= 8;
             else
-                score -= bks_penalties[i];
+                score += bks_penalties[i];
         }
     }
 
@@ -475,12 +475,11 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[p] & ((1ULL << bqs_squares[i]) | (1ULL << (bqs_squares[i] + 8))))
-                score += 5;
+                score -= 8;
             else
-                score -= bqs_penalties[i];
+                score += bqs_penalties[i];
         }
     }
-
     return score;
 }
 
