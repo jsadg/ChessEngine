@@ -8,11 +8,6 @@
 #include "eval.h"
 #include <stdlib.h>
 
-// Table for most valuable victim, least valuable attacker
-extern int mvv_lva_table[6][6];
-
-
-
 // Search capture/promotion related moves to avoid horizon effect
 int quiescence(int alpha, int beta);
 

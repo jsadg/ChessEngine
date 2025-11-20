@@ -1,6 +1,6 @@
 #include "eval.h"
 
-const int material_score[12] = {
+static const int material_score[12] = {
     100,    // White pawn
     325,    // White knight
     350,    // White bishop
@@ -16,7 +16,7 @@ const int material_score[12] = {
 };
 
 // Space/center gaining moves good, promotion good, king safety good, overextend bad
-const int pawn_score[64] = {
+static const int pawn_score[64] = {
     70,  70,  70,  70,  70,  70,  70,  70,
     30,  30,  30,  30,  30,  30,  30,  30,
     20,  20,  20,  35,  35,  20,  20,  20,
@@ -28,7 +28,7 @@ const int pawn_score[64] = {
 };
 
 // Push em' baby, outside pawns better
-const int pawn_endgame_score[64] = {
+static const int pawn_endgame_score[64] = {
     50,  50,  50,  50,  50,  50,  50,  50,
     37,  37,  37,  37,  37,  37,  37,  37,
     27,  27,  27,  27,  27,  27,  27,  27,
@@ -40,7 +40,7 @@ const int pawn_endgame_score[64] = {
 };
 
 // Corners and edge bad, motivation to develop
-const int knight_score[64] = {
+static const int knight_score[64] = {
    -20, -10, -10, -10, -10, -10, -10, -20,
    -10,  -5,   0,   0,   0,   0,  -5, -10,
    -10,   0,  13,  15,  15,  13,   0, -10,
@@ -51,7 +51,7 @@ const int knight_score[64] = {
    -20, -10, -10, -10, -10, -10, -10, -20
 };
 // Corners bad, own side good, motivation to develop
-const int bishop_score[64] = {
+static const int bishop_score[64] = {
    -10,   0,   0,   0,   0,   0,   0,  -10,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
@@ -63,7 +63,7 @@ const int bishop_score[64] = {
 };
 
 // Central files good, 7th and 8th ranks good
-const int rook_score[64] = {
+static const int rook_score[64] = {
     28,  28,  28,  28,  28,  28,  28,  28,
     35,  35,  35,  35,  35,  35,  35,  35,
      0,   0,   0,   0,   0,   0,   0,   0,
@@ -75,7 +75,7 @@ const int rook_score[64] = {
 };
 
 // Home area ok, center ok, main diagonal ok
-const int queen_score[64] = {
+static const int queen_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
@@ -87,7 +87,7 @@ const int queen_score[64] = {
 };
 
 // Centralized is best
-const int queen_endgame_score[64] = {
+static const int queen_endgame_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   5,   5,   5,   5,   5,   5,   0,
      0,   5,  15,  15,  15,  15,   5,   0,
@@ -99,7 +99,7 @@ const int queen_endgame_score[64] = {
 };
 
 // Everywhere except castled bad
-const int king_score[64] = {
+static const int king_score[64] = {
    -20, -20, -20, -20, -20, -20, -20, -20,
    -20, -20, -20, -20, -20, -20, -20, -20,
    -20, -20, -20, -20, -20, -20, -20, -20,
@@ -111,7 +111,7 @@ const int king_score[64] = {
 };
 
 // Active king
-const int king_endgame_score[64] = {
+static const int king_endgame_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
     10,  20,  20,  20,  20,  20,  20,  10,
     15,  30,  40,  40,  40,  40,  30,  15,
@@ -337,7 +337,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility += count_bits(attacks)*11;
+                mobility += count_bits(attacks)*12;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -348,7 +348,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility -= count_bits(attacks)*11;
+                mobility -= count_bits(attacks)*12;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -401,7 +401,88 @@ int calc_piece_mobility(){
     return mobility/10;
 }
 
+int calc_piece_bonuses(){
+    int score = 0;
 
+    // Bishop pair calculations
+    int num_white_bishops = count_bits(bitboards[B]);
+    int num_black_bishops = count_bits(bitboards[b]);
+    if(num_white_bishops == 2){
+        score += 50;
+    }
+    if(num_black_bishops == 2){
+        score -= 50;
+    }
+
+    return score;
+}
+
+// Arrays containing important pawn shield squares and assocaited penalty
+static const int wks_squares[] = {f2, g2, h2};
+static const int wks_penalties[] = {10, 25, 10};
+
+static const int wqs_squares[] = {a2, b2, c2};
+static const int wqs_penalties[] = {10, 25, 20};
+
+static const int bks_squares[] = {f7, g7, h7};
+static const int bks_penalties[] = {10, 25, 10};
+
+static const int bqs_squares[] = {a7, b7, c7};
+static const int bqs_penalties[] = {10, 25, 20};
+
+int calc_king_safety(){
+    // If endgame position king safety bonus not needed
+    if(count_bits(occupancies[both]) <= 12){
+        return 0;
+    }
+    int score = 0;
+
+    // If white castled kingside:
+    if(bitboards[K] & ((1ULL << g1) | (1ULL << h1))){
+        // Loop through important king safety squares
+        for(int i = 0; i < 3; i++){
+            if(bitboards[P] & ((1ULL << wks_squares[i]) | (1ULL << (wks_squares[i] - 8))))
+                score += 5;
+            else
+                score -= wks_penalties[i];
+        }
+    }
+
+    // If white castled queenside:
+    if(bitboards[K] & ((1ULL << c1) | (1ULL << b1))){
+        // Loop through important king safety squares
+        for(int i = 0; i < 3; i++){
+            if(bitboards[P] & ((1ULL << wqs_squares[i]) | (1ULL << (wqs_squares[i] - 8))))
+                score += 5;
+            else
+                score -= wqs_penalties[i];
+        }
+    }
+
+    // If black castled kingside:
+    if(bitboards[k] & ((1ULL << g8) | (1ULL << h8))){
+        // Loop through important king safety squares
+        for(int i = 0; i < 3; i++){
+            if(bitboards[p] & ((1ULL << bks_squares[i]) | (1ULL << (bks_squares[i] + 8))))
+                score += 5;
+            else
+                score -= bks_penalties[i];
+        }
+    }
+
+    // If black castled queenside:
+    if(bitboards[k] & ((1ULL << c8) | (1ULL << b8))){
+        // Loop through important king safety squares
+        for(int i = 0; i < 3; i++){
+            if(bitboards[p] & ((1ULL << bqs_squares[i]) | (1ULL << (bqs_squares[i] + 8))))
+                score += 5;
+            else
+                score -= bqs_penalties[i];
+        }
+    }
+
+    return score;
+}
 
 int evaluate(){
     int score = 0;
@@ -427,6 +508,11 @@ int evaluate(){
 
     // Add piece mobility bonuses
     score += calc_piece_mobility();
+    
+    // Add bishop pair bonus
+    score += calc_piece_bonuses();
+    
+    score += calc_king_safety();
 
     return (side == white) ? score : -score;
 }

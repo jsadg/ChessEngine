@@ -6,23 +6,7 @@
 #include "math.h"
 #include "attacks.h"
 
-// Table of material scores
-extern const int material_score[12];
-
-// Positional scores based on where the piece is
-extern const int pawn_score[64];
-extern const int knight_score[64];
-extern const int bishop_score[64];
-extern const int rook_score[64];
-extern const int queen_score[64];
-extern const int king_score[64];
-
-// Updated positional scores for endgames
-extern const int pawn_endgame_score[64];
-extern const int queen_endgame_score[64];
-extern const int king_endgame_score[64];
-
-
+// Psqt tables for different parts of the game
 extern int middlegame_piece_square_total[12][64];
 
 extern int endgame_piece_square_total[12][64];
@@ -39,6 +23,12 @@ int calc_pawn_structure();
 
 // Calculates the mobility bonus for each piece in the position
 int calc_piece_mobility();
+
+// Eval bonuses such as bishop pair
+int calc_piece_bonuses();
+
+// Calculate king safety bonuses/penalties based on pawn shield and piece defenders
+int calc_king_safety();
 
 // Return the eval of the current position
 int evaluate();
