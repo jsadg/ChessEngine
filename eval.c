@@ -292,8 +292,8 @@ int calc_pawn_structure(){
     int score = 0;
 
     // Reverse of score since these are penalties    
-    score -= (white_doubled*10) + (white_islands * white_islands * 2) + (white_isolated * 15);
-    score += (black_doubled*10) + (black_islands * black_islands * 2) + (black_isolated * 15);
+    score -= (white_doubled*12) + (white_islands * white_islands * 2) + (white_isolated * 18);
+    score += (black_doubled*12) + (black_islands * black_islands * 2) + (black_isolated * 18);
     return score;
 }
 
@@ -316,7 +316,7 @@ int calc_piece_mobility(){
                 source_square = get_ls1b_index(bitboard);
                 // Get knight attacks
                 attacks = knight_attacks[source_square];
-                mobility += count_bits(attacks)*10;
+                mobility += count_bits(attacks)*9;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -325,7 +325,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 attacks = knight_attacks[source_square];
-                mobility -= count_bits(attacks)*10;
+                mobility -= count_bits(attacks)*9;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -337,7 +337,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility += count_bits(attacks)*15;
+                mobility += count_bits(attacks)*12;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -348,7 +348,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility -= count_bits(attacks)*15;
+                mobility -= count_bits(attacks)*12;
                 rem_bit(bitboard, source_square);
             }
         }
