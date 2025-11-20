@@ -73,7 +73,7 @@ extern int pos_num;
 
 
 // Type of move enum for quiesence search
-enum { all_moves, captures };
+enum {all_moves, captures};
 
 // Castling rights lookup table
 extern const int castling_rights[64];
