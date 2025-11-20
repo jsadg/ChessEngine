@@ -21,7 +21,7 @@ static const int pawn_score[64] = {
     30,  30,  30,  30,  30,  30,  30,  30,
     20,  20,  20,  35,  35,  20,  20,  20,
     17,  15,  15,  40,  40,  15,  15,  17,
-    15,   0,  20,  35,  35,   5,   0,  15,
+    15,   0,  20,  40,  40,   5,   0,  15,
      5,   0,  15,  10,  10,  -5,   5,   7,
      5,   5,   5, -15, -15,   5,   5,   5,
      0,   0,   0,   0,   0,   0,   0,   0
@@ -71,7 +71,7 @@ static const int rook_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
-    -5,   0,  14,  25,  25,  14,   0,   0
+    -5,   5,  10,  25,  25,  10,   5,   0
 };
 
 // Home area ok, center ok, main diagonal ok
@@ -83,7 +83,7 @@ static const int queen_score[64] = {
     15,   0,   5,  10,  10,   5,   0,  10,
      0,  15,   0,  10,  10,   0,   0,   0,
      0,   0,  15,  15,  15,   0,   0,   0,
-     0,   0,   0,  15,   0,   0,   0,   0
+     0,   0,   0,  10,   0,   0,   0,   0
 };
 
 // Centralized is best
@@ -407,11 +407,70 @@ int calc_piece_bonuses(){
     // Bishop pair calculations
     int num_white_bishops = count_bits(bitboards[B]);
     int num_black_bishops = count_bits(bitboards[b]);
-    if(num_white_bishops == 2){
-        score += 50;
+    if(num_white_bishops >= 2){
+        score += 70;
     }
-    if(num_black_bishops == 2){
-        score -= 50;
+    if(num_black_bishops >= 2){
+        score -= 70;
+    }
+
+    // Open/half open files for rook bonus
+    int square = 0;
+    int file = 0;
+    U64 in_front = 0ULL;
+    int friendly_pawn = 0;
+    int enemy_pawn = 0;
+    U64 white_rooks = bitboards[R];
+    U64 black_rooks = bitboards[r];
+
+    // Find type of pawns in front
+    while(white_rooks){
+        square = get_ls1b_index(white_rooks);
+        file = square % 8;
+
+        //                   File Mask                 Squares in front mask
+        in_front = ((0x0101010101010101ULL << file) & (~0ULL << (square + 1)));
+
+        friendly_pawn = bitboards[P] & in_front;
+        enemy_pawn = bitboards[p] & in_front;
+
+        // Closed file
+        if(friendly_pawn){
+            score -= 5;
+        }
+        // Half open file
+        else if(enemy_pawn){
+            score += 5;
+        }
+        // Open file
+        else{
+            score += 20;
+        }
+        rem_bit(white_rooks, square);
+    }
+
+    while(black_rooks){
+        square = get_ls1b_index(black_rooks);
+        file = square % 8;
+        //                   File Mask                 Squares in front mask
+        in_front = ((0x0101010101010101ULL << file) & ((1ULL << square) - 1));
+                                                  // From 000010000 to 000001111 etc
+        friendly_pawn = bitboards[p] & in_front;
+        enemy_pawn = bitboards[P] & in_front;
+
+        // Closed file
+        if(friendly_pawn){
+            score -= 5;
+        }
+        // Half open file
+        else if(enemy_pawn){
+            score += 5;
+        }
+        // Open file
+        else{
+            score += 20;
+        }
+        rem_bit(black_rooks, square);
     }
 
     return score;
@@ -432,7 +491,7 @@ static const int bqs_penalties[] = {12, 30, 22};
 
 int calc_king_safety(){
     // If endgame position king safety bonus not needed
-    if(count_bits(occupancies[both]) <= 12){
+    if(count_bits(occupancies[both]) <= 14){
         return 0;
     }
     int score = 0;
@@ -493,7 +552,7 @@ int evaluate(){
         while(bitboard){
             square = get_ls1b_index(bitboard);
             // Piece weights
-            if(count_bits(occupancies[both]) > 12){
+            if(count_bits(occupancies[both]) > 14){
                 score += middlegame_piece_square_total[piece][square];
             }
             else{

@@ -24,7 +24,7 @@ int calc_pawn_structure();
 // Calculates the mobility bonus for each piece in the position
 int calc_piece_mobility();
 
-// Eval bonuses such as bishop pair
+// Eval bonuses such as bishop pair/open files
 int calc_piece_bonuses();
 
 // Calculate king safety bonuses/penalties based on pawn shield and piece defenders
