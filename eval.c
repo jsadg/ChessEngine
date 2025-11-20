@@ -316,7 +316,7 @@ int calc_piece_mobility(){
                 source_square = get_ls1b_index(bitboard);
                 // Get knight attacks
                 attacks = knight_attacks[source_square];
-                mobility += count_bits(attacks)*9;
+                mobility += count_bits(attacks)*8;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -325,7 +325,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 attacks = knight_attacks[source_square];
-                mobility -= count_bits(attacks)*9;
+                mobility -= count_bits(attacks)*8;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -337,7 +337,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility += count_bits(attacks)*12;
+                mobility += count_bits(attacks)*10;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -348,7 +348,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility -= count_bits(attacks)*12;
+                mobility -= count_bits(attacks)*10;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -360,7 +360,7 @@ int calc_piece_mobility(){
                 // Get rook attacks
                 attacks = get_rook_attacks(source_square, occupancies[both]);
                 // Less value for rook mobility
-                mobility += count_bits(attacks)*6;
+                mobility += count_bits(attacks)*5;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -371,7 +371,7 @@ int calc_piece_mobility(){
                 // Get rook attacks
                 attacks = get_rook_attacks(source_square, occupancies[both]);
                 // Less value for rook mobility
-                mobility -= count_bits(attacks)*6;
+                mobility -= count_bits(attacks)*5;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -382,7 +382,7 @@ int calc_piece_mobility(){
                 // Get queen attacks
                 attacks = get_queen_attacks(source_square, occupancies[both]);
                 // Even less value for queen mobility
-                mobility += count_bits(attacks)*3;
+                mobility += count_bits(attacks)*2;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -393,7 +393,7 @@ int calc_piece_mobility(){
                 // Get queen attacks
                 attacks = get_queen_attacks(source_square, occupancies[both]);
                 // Even less value for queen mobility
-                mobility -= count_bits(attacks)*3;
+                mobility -= count_bits(attacks)*2;
                 rem_bit(bitboard, source_square);
             }
         }
