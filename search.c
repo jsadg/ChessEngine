@@ -75,10 +75,6 @@ int negamax(int alpha, int beta, int depth){
     // Used for checkmate detection
     int in_check = is_square_attacked((side == white) ? get_ls1b_index(bitboards[K]) : get_ls1b_index(bitboards[k]), side ^ 1);
 
-    if (in_check && depth <= 3) {
-        depth++;
-    }
-
     int legal_moves = 0;
     int best_sofar = 0;
     int old_alpha = alpha;
