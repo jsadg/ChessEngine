@@ -21,8 +21,8 @@ static const int pawn_score[64] = {
     30,  30,  30,  30,  30,  30,  30,  30,
     20,  20,  20,  35,  35,  20,  20,  20,
     17,  15,  15,  40,  40,  15,  15,  17,
-    15,   0,  20,  40,  40,   5,   0,  15,
-     5,   0,  15,  10,  10,  -5,   5,   7,
+    15,   0,  20,  40,  42,   5,   0,  15,
+     5,   0,  15,  20,  20,  -5,   5,   7,
      5,   5,   5, -15, -15,   5,   5,   5,
      0,   0,   0,   0,   0,   0,   0,   0
 };
@@ -339,7 +339,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility += count_bits(attacks)*10;
+                mobility += count_bits(attacks)*11;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -350,7 +350,7 @@ int calc_piece_mobility(){
                 // Get bishop attacks
                 attacks = get_bishop_attacks(source_square, occupancies[both]);
                 // Increased value for bishop mobiliity
-                mobility -= count_bits(attacks)*10;
+                mobility -= count_bits(attacks)*11;
                 rem_bit(bitboard, source_square);
             }
         }
@@ -542,10 +542,12 @@ int calc_king_safety(){
     if(bitboards[K] & ((1ULL << g1) | (1ULL << h1))){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
-            if(bitboards[P] & ((1ULL << wks_squares[i]) | (1ULL << (wks_squares[i] - 8))))
-                score += 8;
-            else
+            if(bitboards[P] & ((1ULL << wks_squares[i]) | (1ULL << (wks_squares[i] - 8)))){
+                score += 5;
+            }
+            else{
                 score -= wks_penalties[i];
+            }
         }
     }
 
@@ -553,10 +555,12 @@ int calc_king_safety(){
     if(bitboards[K] & ((1ULL << c1) | (1ULL << b1))){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
-            if(bitboards[P] & ((1ULL << wqs_squares[i]) | (1ULL << (wqs_squares[i] - 8))))
-                score += 8;
-            else
+            if(bitboards[P] & ((1ULL << wqs_squares[i]) | (1ULL << (wqs_squares[i] - 8)))){
+                score += 5;
+            }
+            else{
                 score -= wqs_penalties[i];
+            }
         }
     }
 
@@ -564,10 +568,12 @@ int calc_king_safety(){
     if(bitboards[k] & ((1ULL << g8) | (1ULL << h8))){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
-            if(bitboards[p] & ((1ULL << bks_squares[i]) | (1ULL << (bks_squares[i] + 8))))
-                score -= 8;
-            else
+            if(bitboards[p] & ((1ULL << bks_squares[i]) | (1ULL << (bks_squares[i] + 8)))){
+                score -= 5;
+            }
+            else{
                 score += bks_penalties[i];
+            }
         }
     }
 
@@ -575,10 +581,12 @@ int calc_king_safety(){
     if(bitboards[k] & ((1ULL << c8) | (1ULL << b8))){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
-            if(bitboards[p] & ((1ULL << bqs_squares[i]) | (1ULL << (bqs_squares[i] + 8))))
-                score -= 8;
-            else
+            if(bitboards[p] & ((1ULL << bqs_squares[i]) | (1ULL << (bqs_squares[i] + 8)))){
+                score -= 5;
+            }
+            else{
                 score += bqs_penalties[i];
+            }
         }
     }
     return score;
