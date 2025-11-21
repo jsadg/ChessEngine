@@ -42,6 +42,7 @@ int make_move(int move){
     int double_push = get_double(move);
     int ep = get_enpassant(move);
     int castling = get_castling(move);
+
     // Move piece
     rem_bit(bitboards[piece], source_square);
     if(promoted_piece){
@@ -271,13 +272,13 @@ void generate_moves(moves *move_list){
         if(piece == K && side == white){
             // White kingside castling is legal
             if(castle & wkc){
-                if(!get_bit(occupancies[both], f1) && !get_bit(occupancies[both], g1) && !is_square_attacked(f1, black) && !is_square_attacked(g1, black)){
+                if(!get_bit(occupancies[both], f1) && !get_bit(occupancies[both], g1) && !is_square_attacked(f1, black) && !is_square_attacked(g1, black) && !is_square_attacked(e1, black)){
                     add_move(move_list, encode_move(e1, g1, K, 0, 0, 0, 0, 1));
                 }
             }
             // White queenside castling is legal
             if(castle & wqc){
-                if(!get_bit(occupancies[both], d1) && !get_bit(occupancies[both], c1) && !get_bit(occupancies[both], b1) && !is_square_attacked(d1, black) && !is_square_attacked(c1, black)){
+                if(!get_bit(occupancies[both], d1) && !get_bit(occupancies[both], c1) && !get_bit(occupancies[both], b1) && !is_square_attacked(d1, black) && !is_square_attacked(c1, black) && !is_square_attacked(e1, black)){
                     add_move(move_list, encode_move(e1, c1, K, 0, 0, 0, 0, 1));
                 }
             }
@@ -286,13 +287,13 @@ void generate_moves(moves *move_list){
         if(piece == k && side == black){
             // Black kingside castling is legal
             if(castle & bkc){
-                if(!get_bit(occupancies[both], f8) && !get_bit(occupancies[both], g8) && !is_square_attacked(f8, white) && !is_square_attacked(g8, white)){
+                if(!get_bit(occupancies[both], f8) && !get_bit(occupancies[both], g8) && !is_square_attacked(f8, white) && !is_square_attacked(g8, white) && !is_square_attacked(e8, black)){
                     add_move(move_list, encode_move(e8, g8, k, 0, 0, 0, 0, 1));
                 }
             }
             // Black queenside castling is legal
             if(castle & bqc){
-                if(!get_bit(occupancies[both], d8) && !get_bit(occupancies[both], c8) && !get_bit(occupancies[both], b8) && !is_square_attacked(d8, white) && !is_square_attacked(c8, white)){
+                if(!get_bit(occupancies[both], d8) && !get_bit(occupancies[both], c8) && !get_bit(occupancies[both], b8) && !is_square_attacked(d8, white) && !is_square_attacked(c8, white) && !is_square_attacked(e8, black)){
                     add_move(move_list, encode_move(e8, c8, k, 0, 0, 0, 0, 1));
                 }
             }
