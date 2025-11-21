@@ -3,7 +3,7 @@
 static const int material_score[12] = {
     100,    // White pawn
     325,    // White knight
-    350,    // White bishop
+    340,    // White bishop
     500,    // White rook
     950,    // White queen
     10000,  // White king
@@ -320,8 +320,8 @@ int calc_pawn_structure(){
     int score = 0;
 
     // Reverse of score since these are penalties    
-    score -= (white_doubled*12) + (white_islands * white_islands * 2) + (white_isolated * 18);
-    score += (black_doubled*12) + (black_islands * black_islands * 2) + (black_isolated * 18);
+    score -= (white_doubled*15) + (white_islands * white_islands * 2) + (white_isolated * 20);
+    score += (black_doubled*15) + (black_islands * black_islands * 2) + (black_isolated * 20);
     return score;
 }
 
@@ -485,7 +485,7 @@ int calc_piece_bonuses(){
             }
             // Behind passed pawn
             else if(friendly_pawn){
-                score += 15;
+                score += 25;
             }
             // Attacking enemy pawn or open file
             else{
@@ -528,7 +528,7 @@ int calc_piece_bonuses(){
             }
             // Behind passed pawn
             else if(friendly_pawn){
-                score -= 15;
+                score -= 25;
             }
             // Attacking enemy pawn or open file
             else{
