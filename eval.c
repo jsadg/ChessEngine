@@ -80,7 +80,7 @@ static const int queen_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   5,   5,   5,   5,   0,   0,
-    15,   0,   5,  10,  10,   5,   0,  10,
+    10,   0,   5,  10,  10,   5,   0,  10,
      0,  15,   0,  10,  10,   0,   0,   0,
      0,   0,  15,  15,  15,   0,   0,   0,
      0,   0,   0,  10,   0,   0,   0,   0
@@ -410,10 +410,10 @@ int calc_piece_bonuses(){
     int num_white_bishops = count_bits(bitboards[B]);
     int num_black_bishops = count_bits(bitboards[b]);
     if(num_white_bishops >= 2){
-        score += 70;
+        score += 60;
     }
     if(num_black_bishops >= 2){
-        score -= 70;
+        score -= 60;
     }
 
     // Open/half open files for rook bonus
@@ -483,30 +483,30 @@ int calc_piece_bonuses(){
         if(get_game_state() == 0){
             // Closed file
             if(friendly_pawn){
-                score -= 5;
+                score += 5;
             }
             // Half open file
             else if(enemy_pawn){
-                score += 5;
+                score -= 5;
             }
             // Open file
             else{
-                score += 20;
+                score -= 20;
             }
         }
         // In endgame put rook behind passed pawns
         else if(get_game_state() == 1){
             // Closed file
             if(friendly_pawn && enemy_pawn){
-                score -= 5;
+                score += 5;
             }
             // Behind passed pawn
             else if(friendly_pawn){
-                score += 20;
+                score -= 20;
             }
             // Attacking enemy pawn or open file
             else{
-                score += 5;
+                score -= 5;
             }
         }
 

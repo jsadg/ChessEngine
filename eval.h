@@ -14,10 +14,10 @@ extern int endgame_piece_square_total[12][64];
 // Returns 0 if middle game, 1 if endgame, threshold based on rough value of pieces
 static inline int get_game_state(){
     int material = 
-        9 * (count_bits(bitboards[Q]) + count_bits(bitboards[q])) +
-        5 * (count_bits(bitboards[R]) + count_bits(bitboards[r])) +
-        3 * (count_bits(bitboards[B]) + count_bits(bitboards[b])) +
-        3 * (count_bits(bitboards[N]) + count_bits(bitboards[n]));
+        9 * (count_bits(bitboards[Q] | bitboards[q])) +
+        5 * (count_bits(bitboards[R] | bitboards[r])) +
+        3 * (count_bits(bitboards[B] | bitboards[b])) +
+        3 * (count_bits(bitboards[N] | bitboards[n]));
 
     if(material > 140){
         return 0;
