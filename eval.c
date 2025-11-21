@@ -55,7 +55,7 @@ static const int bishop_score[64] = {
    -10,   0,   0,   0,   0,   0,   0,  -10,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
-     0,  20,   0,   0,   0,   0,  20,   0,
+     0,  18,   0,   0,   0,   0,  18,   0,
     10,   0,  20,   0,   0,  20,   0,  10,
      0,  10,   0,  15,  15,   0,  10,   0,
      5,  20,   0,  18,  18,   0,  20,   5,
@@ -128,7 +128,9 @@ int endgame_piece_square_total[12][64];
 
 
 // Used to flip for black
-static inline int mirror_square(int square) { return square ^ 56; }
+static inline int mirror_square(int square){
+    return square ^ 56;
+}
 
 void init_middlegame_psqt(){
     for(int piece = P; piece <= k; piece++){
@@ -434,18 +436,37 @@ int calc_piece_bonuses(){
         friendly_pawn = bitboards[P] & in_front;
         enemy_pawn = bitboards[p] & in_front;
 
-        // Closed file
-        if(friendly_pawn){
-            score -= 5;
+        // In middle game prioritize open files
+        if(get_game_state() == 0){
+            // Closed file
+            if(friendly_pawn){
+                score -= 5;
+            }
+            // Half open file
+            else if(enemy_pawn){
+                score += 5;
+            }
+            // Open file
+            else{
+                score += 20;
+            }
         }
-        // Half open file
-        else if(enemy_pawn){
-            score += 5;
+        // In endgame put rook behind passed pawns
+        else if(get_game_state() == 1){
+            // Closed file
+            if(friendly_pawn && enemy_pawn){
+                score -= 5;
+            }
+            // Behind passed pawn
+            else if(friendly_pawn){
+                score += 20;
+            }
+            // Attacking enemy pawn or open file
+            else{
+                score += 5;
+            }
         }
-        // Open file
-        else{
-            score += 20;
-        }
+
         rem_bit(white_rooks, square);
     }
 
@@ -458,18 +479,37 @@ int calc_piece_bonuses(){
         friendly_pawn = bitboards[p] & in_front;
         enemy_pawn = bitboards[P] & in_front;
 
-        // Closed file
-        if(friendly_pawn){
-            score -= 5;
+        // In middle game prioritize open files
+        if(get_game_state() == 0){
+            // Closed file
+            if(friendly_pawn){
+                score -= 5;
+            }
+            // Half open file
+            else if(enemy_pawn){
+                score += 5;
+            }
+            // Open file
+            else{
+                score += 20;
+            }
         }
-        // Half open file
-        else if(enemy_pawn){
-            score += 5;
+        // In endgame put rook behind passed pawns
+        else if(get_game_state() == 1){
+            // Closed file
+            if(friendly_pawn && enemy_pawn){
+                score -= 5;
+            }
+            // Behind passed pawn
+            else if(friendly_pawn){
+                score += 20;
+            }
+            // Attacking enemy pawn or open file
+            else{
+                score += 5;
+            }
         }
-        // Open file
-        else{
-            score += 20;
-        }
+
         rem_bit(black_rooks, square);
     }
 
@@ -489,9 +529,11 @@ static const int bks_penalties[] = {12, 30, 12};
 static const int bqs_squares[] = {a7, b7, c7};
 static const int bqs_penalties[] = {12, 30, 22};
 
+
+
 int calc_king_safety(){
     // If endgame position king safety bonus not needed
-    if(count_bits(occupancies[both]) <= 14){
+    if(get_game_state() == 1){
         return 0;
     }
     int score = 0;
@@ -551,8 +593,8 @@ int evaluate(){
         bitboard = bitboards[piece];
         while(bitboard){
             square = get_ls1b_index(bitboard);
-            // Piece weights
-            if(count_bits(occupancies[both]) > 14){
+            // Piece weights based on game state
+            if(get_game_state() == 0){
                 score += middlegame_piece_square_total[piece][square];
             }
             else{
