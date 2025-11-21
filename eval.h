@@ -17,9 +17,10 @@ static inline int get_game_state(){
         9 * (count_bits(bitboards[Q] | bitboards[q])) +
         5 * (count_bits(bitboards[R] | bitboards[r])) +
         3 * (count_bits(bitboards[B] | bitboards[b])) +
-        3 * (count_bits(bitboards[N] | bitboards[n]));
+        3 * (count_bits(bitboards[N] | bitboards[n])) +
+        1 * (count_bits(bitboards[P] | bitboards[p]));
 
-    if(material > 140){
+    if(material > 25){
         return 0;
     }
     else{

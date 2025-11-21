@@ -22,7 +22,7 @@ static const int pawn_score[64] = {
     20,  20,  20,  35,  35,  20,  20,  20,
     17,  15,  15,  40,  40,  15,  15,  17,
     15,   0,  20,  40,  42,   5,   0,  15,
-     5,   0,  15,  20,  20,  -5,   5,   7,
+    10,   0,  15,  25,  25,  -5,   5,  10,
      5,   5,   5, -15, -15,   5,   5,   5,
      0,   0,   0,   0,   0,   0,   0,   0
 };
@@ -56,9 +56,9 @@ static const int bishop_score[64] = {
      0,   0,   0,   0,   0,   0,   0,   0,
      0,   0,   0,   0,   0,   0,   0,   0,
      0,  18,   0,   0,   0,   0,  18,   0,
-    10,   0,  20,   0,   0,  20,   0,  10,
+    12,   0,  20,   0,   0,  20,   0,  12,
      0,  10,   0,  15,  15,   0,  10,   0,
-     5,  20,   0,  18,  18,   0,  20,   5,
+     5,  20,   0,  15,  15,   0,  20,   5,
    -10,   0,  -8,   0,   0,  -8,   0,  -10
 };
 
@@ -107,7 +107,7 @@ static const int king_score[64] = {
    -20, -20, -20, -20, -20, -20, -20, -20,
    -20, -20, -20, -20, -20, -20, -20, -20,
      0,   0, -15, -15, -15, -15,   0,   0,
-     5,  30,  25, -10, -10,  -5,  50,   5 
+     5,  30,  25, -10, -10,  -5,  40,   5 
 };
 
 // Active king
@@ -120,6 +120,17 @@ static const int king_endgame_score[64] = {
      0,  20,  20,  20,  20,  20,  20,   0,
     -5,  10,  10,  10,  10,  10,  10,  -5,
    -15, -15, -15, -15, -15, -15, -15, -15,
+};
+
+static const U64 FILE_MASKS[8] = {
+    0x0101010101010101ULL, // A file
+    0x0202020202020202ULL, // B file
+    0x0404040404040404ULL, // C file
+    0x0808080808080808ULL, // D file
+    0x1010101010101010ULL, // E file
+    0x2020202020202020ULL, // F file
+    0x4040404040404040ULL, // G file
+    0x8080808080808080ULL  // H file
 };
 
 
@@ -231,17 +242,26 @@ int calc_pawn_structure(){
     int white_pawn_array[8] = {0};
     U64 bitboard = bitboards[P];
     int square = 0;
-
-    // Calculate isolated pawns
-    U64 left = (bitboard << 1) & not_a_file;
-    U64 right = (bitboard >> 1) & not_h_file;
-    int white_isolated = count_bits(bitboard & ~(left | right));
+    int file = 0;
+    U64 left_file = 0ULL;
+    U64 right_file = 0ULL;
+    int white_isolated = 0;
 
     while(bitboard){
         square = get_ls1b_index(bitboard);
         white_pawn_array[square % 8]++;
+
+        // Isolated calculation
+        file = square % 8;
+        left_file = (file > 0) ? FILE_MASKS[file - 1] : 0;
+        right_file = (file < 7) ? FILE_MASKS[file + 1] : 0;
+        if ((bitboards[P] & (left_file | right_file)) == 0){
+            white_isolated++;
+        }
+
         rem_bit(bitboard, square);
     }
+
     int white_doubled = 0;
     // Calculate number of doubled pawns
     for(int i = 0; i < 8; i++){
@@ -264,13 +284,19 @@ int calc_pawn_structure(){
     bitboard = bitboards[p];
 
     // Calculate isolated pawns
-    left = (bitboard << 1) & not_a_file;
-    right = (bitboard >> 1) & not_h_file;
-    int black_isolated = count_bits(bitboard & ~(left | right));
+    int black_isolated = 0;
 
     while(bitboard){
         square = get_ls1b_index(bitboard);
         black_pawn_array[square % 8]++;
+
+        // Isolated calculation
+        file = square % 8;
+        left_file = (file > 0) ? FILE_MASKS[file - 1] : 0;
+        right_file = (file < 7) ? FILE_MASKS[file + 1] : 0;
+        if ((bitboards[p] & (left_file | right_file)) == 0){
+            black_isolated++;
+        }
         rem_bit(bitboard, square);
     }
     int black_doubled = 0;
@@ -317,7 +343,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get knight attacks
-                attacks = knight_attacks[source_square];
+                attacks = knight_attacks[source_square] & ~occupancies[white];
                 mobility += count_bits(attacks)*8;
                 rem_bit(bitboard, source_square);
             }
@@ -326,7 +352,7 @@ int calc_piece_mobility(){
         if(piece == n){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
-                attacks = knight_attacks[source_square];
+                attacks = knight_attacks[source_square] & ~occupancies[black];
                 mobility -= count_bits(attacks)*8;
                 rem_bit(bitboard, source_square);
             }
@@ -337,7 +363,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get bishop attacks
-                attacks = get_bishop_attacks(source_square, occupancies[both]);
+                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[white];
                 // Increased value for bishop mobiliity
                 mobility += count_bits(attacks)*11;
                 rem_bit(bitboard, source_square);
@@ -348,7 +374,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get bishop attacks
-                attacks = get_bishop_attacks(source_square, occupancies[both]);
+                attacks = get_bishop_attacks(source_square, occupancies[both]) & ~occupancies[black];
                 // Increased value for bishop mobiliity
                 mobility -= count_bits(attacks)*11;
                 rem_bit(bitboard, source_square);
@@ -360,7 +386,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get rook attacks
-                attacks = get_rook_attacks(source_square, occupancies[both]);
+                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[white];
                 // Less value for rook mobility
                 mobility += count_bits(attacks)*5;
                 rem_bit(bitboard, source_square);
@@ -371,7 +397,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get rook attacks
-                attacks = get_rook_attacks(source_square, occupancies[both]);
+                attacks = get_rook_attacks(source_square, occupancies[both]) & ~occupancies[black];
                 // Less value for rook mobility
                 mobility -= count_bits(attacks)*5;
                 rem_bit(bitboard, source_square);
@@ -382,7 +408,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get queen attacks
-                attacks = get_queen_attacks(source_square, occupancies[both]);
+                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[white];
                 // Even less value for queen mobility
                 mobility += count_bits(attacks)*2;
                 rem_bit(bitboard, source_square);
@@ -393,7 +419,7 @@ int calc_piece_mobility(){
             while(bitboard){
                 source_square = get_ls1b_index(bitboard);
                 // Get queen attacks
-                attacks = get_queen_attacks(source_square, occupancies[both]);
+                attacks = get_queen_attacks(source_square, occupancies[both]) & ~occupancies[black];
                 // Even less value for queen mobility
                 mobility -= count_bits(attacks)*2;
                 rem_bit(bitboard, source_square);
@@ -448,7 +474,7 @@ int calc_piece_bonuses(){
             }
             // Open file
             else{
-                score += 20;
+                score += 15;
             }
         }
         // In endgame put rook behind passed pawns
@@ -459,7 +485,7 @@ int calc_piece_bonuses(){
             }
             // Behind passed pawn
             else if(friendly_pawn){
-                score += 20;
+                score += 15;
             }
             // Attacking enemy pawn or open file
             else{
@@ -491,7 +517,7 @@ int calc_piece_bonuses(){
             }
             // Open file
             else{
-                score -= 20;
+                score -= 15;
             }
         }
         // In endgame put rook behind passed pawns
@@ -502,7 +528,7 @@ int calc_piece_bonuses(){
             }
             // Behind passed pawn
             else if(friendly_pawn){
-                score -= 20;
+                score -= 15;
             }
             // Attacking enemy pawn or open file
             else{
@@ -512,11 +538,10 @@ int calc_piece_bonuses(){
 
         rem_bit(black_rooks, square);
     }
-
     return score;
 }
 
-// Arrays containing important pawn shield squares and assocaited penalty
+// Arrays containing important pawn shield squares and associated penalty
 static const int wks_squares[] = {f2, g2, h2};
 static const int wks_penalties[] = {12, 30, 12};
 
@@ -543,7 +568,7 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[P] & ((1ULL << wks_squares[i]) | (1ULL << (wks_squares[i] - 8)))){
-                score += 5;
+                score += 6;
             }
             else{
                 score -= wks_penalties[i];
@@ -556,7 +581,7 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[P] & ((1ULL << wqs_squares[i]) | (1ULL << (wqs_squares[i] - 8)))){
-                score += 5;
+                score += 6;
             }
             else{
                 score -= wqs_penalties[i];
@@ -569,7 +594,7 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[p] & ((1ULL << bks_squares[i]) | (1ULL << (bks_squares[i] + 8)))){
-                score -= 5;
+                score -= 6;
             }
             else{
                 score += bks_penalties[i];
@@ -582,7 +607,7 @@ int calc_king_safety(){
         // Loop through important king safety squares
         for(int i = 0; i < 3; i++){
             if(bitboards[p] & ((1ULL << bqs_squares[i]) | (1ULL << (bqs_squares[i] + 8)))){
-                score -= 5;
+                score -= 6;
             }
             else{
                 score += bqs_penalties[i];
